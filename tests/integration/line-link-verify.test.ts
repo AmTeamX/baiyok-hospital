@@ -145,8 +145,20 @@ describe("POST /api/line/link/verify", () => {
     expect(mocks.verifyLiffIdToken).not.toHaveBeenCalled();
   });
 
-  it("rejects a missing role (role is never derived from the request body alone)", async () => {
+  it("derives the role from the code when the client omits it", async () => {
+    mocks.supabase.rpc.mockResolvedValue({
+      data: { target_type: "patient", target_id: "p-1", intended_role: "patient" },
+      error: null
+    });
+    queueResults({
+      patients: [{ data: { id: "p-1" }, error: null }],
+      line_accounts: [{ data: { id: "acct-1" }, error: null }],
+      line_account_links: [{ data: null, error: null }, { data: [{ role: "patient" }], error: null }],
+      audit_logs: [{ data: null, error: null }]
+    });
+
     const response = await POST(request({ idToken: "id-token", code: "raw-code", nonce: "server-nonce" }));
-    expect(response.status).toBe(422);
+    expect(response.status).toBe(200);
+    expect((await response.json()).role).toBe("patient");
   });
 });

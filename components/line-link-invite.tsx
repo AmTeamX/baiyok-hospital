@@ -19,7 +19,7 @@ type Props = {
 export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<{ url: string; qr: string } | null>(null);
+  const [result, setResult] = useState<{ code: string; url: string; qr: string } | null>(null);
 
   async function generate() {
     setLoading(true);
@@ -32,15 +32,13 @@ export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "สร้างรหัสไม่สำเร็จ");
-      const code = encodeURIComponent(body.token);
+      const token = String(body.token ?? "");
       const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
-      // Use the LIFF URL so LINE preserves the query params (the direct endpoint
-      // URL gets opened via line://app/{liffId}, which drops code/role).
       const url = liffId
-        ? `https://liff.line.me/${liffId}?code=${code}&role=${role}`
-        : `${window.location.origin}/liff/link?code=${code}&role=${role}`;
+        ? `https://liff.line.me/${liffId}?code=${encodeURIComponent(token)}`
+        : `${window.location.origin}/liff/link?code=${encodeURIComponent(token)}`;
       const qr = await QRCode.toDataURL(url, { width: 320, margin: 1 });
-      setResult({ url, qr });
+      setResult({ code: token, url, qr });
     } catch (generateError) {
       setError(generateError instanceof Error ? generateError.message : "สร้างรหัสไม่สำเร็จ");
     } finally {
@@ -51,21 +49,28 @@ export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
   async function copy() {
     if (!result) return;
     try {
-      await navigator.clipboard.writeText(result.url);
+      await navigator.clipboard.writeText(result.code);
     } catch {
-      // Clipboard may be unavailable; the link is still shown in the QR.
+      // Clipboard may be unavailable; the code is still shown on screen.
     }
   }
 
   if (result) {
     return (
       <div className="link-invite-result">
-        <img src={result.qr} alt="QR เชื่อมบัญชี LINE" width={180} height={180} />
-        <p>ให้ผู้ใช้สแกน QR นี้ในแอป LINE — ใช้ได้ครั้งเดียว หมดอายุใน 15 นาที</p>
+        <p>ให้ผู้ใช้เปิดเมนู "ผูกบัญชี" ใน LINE แล้วกรอกรหัสนี้</p>
+        <div className="link-code-display">{result.code}</div>
         <div className="link-invite-actions">
-          <button className="button secondary" onClick={() => void copy()}><Copy size={15} /> คัดลอกลิงก์</button>
+          <button className="button secondary" onClick={() => void copy()}><Copy size={15} /> คัดลอกรหัส</button>
           <button className="button secondary" onClick={() => setResult(null)}><X size={15} /> ปิด</button>
         </div>
+        {result.qr && (
+          <>
+            <p>หรือสแกน QR เพื่อเปิดหน้าผูกบัญชี (รหัสอาจถูกกรอกอัตโนมัติ)</p>
+            <img src={result.qr} alt="QR เปิดหน้าผูกบัญชี LINE" width={160} height={160} />
+          </>
+        )}
+        <p>ใช้ได้ครั้งเดียว หมดอายุใน 15 นาที</p>
       </div>
     );
   }

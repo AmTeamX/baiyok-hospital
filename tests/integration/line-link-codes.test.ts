@@ -68,7 +68,7 @@ describe("POST /api/admin/line/link-codes", () => {
     const body = await response.json();
     expect(body.ok).toBe(true);
     expect(typeof body.token).toBe("string");
-    expect(body.token.length).toBeGreaterThan(20);
+    expect(body.token).toHaveLength(6);
     expect(body.expiresAt).toBeTruthy();
   });
 

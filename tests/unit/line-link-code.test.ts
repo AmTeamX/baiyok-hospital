@@ -8,11 +8,11 @@ describe("line link code", () => {
     expect(hashLinkToken(token)).toHaveLength(64);
   });
 
-  it("generates unique, non-empty tokens", () => {
+  it("generates unique, non-empty short codes", () => {
     const a = generateLinkToken();
     const b = generateLinkToken();
     expect(a).not.toBe(b);
-    expect(a.length).toBeGreaterThan(20);
+    expect(a).toHaveLength(6);
     expect(hashLinkToken(a)).not.toBe(hashLinkToken(b));
   });
 

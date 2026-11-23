@@ -370,6 +370,7 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 .link-invite-result img { border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); }
 .link-invite-result p { margin-block: 0; }
 .link-invite-actions { display: flex; gap: var(--space-sm); align-items: center; }
+.link-code-display { padding: var(--space-md) var(--space-lg); border: var(--rule-thin) solid var(--color-rule-2); border-radius: var(--radius-md); background: var(--color-paper-2); font-family: var(--font-mono); font-size: var(--text-2xl); font-weight: 800; letter-spacing: 0.35em; text-align: center; }
 .missed-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-block-end: var(--space-lg); border-block-end: var(--rule-thin) solid var(--color-rule); }
 .missed-tabs a { display: inline-flex; min-height: 2.75rem; align-items: center; padding-inline: var(--space-md); border-block-end: 2px solid transparent; color: var(--color-muted); font-weight: 700; }
 .missed-tabs a.active { color: var(--color-accent-strong); border-block-end-color: var(--color-accent); }

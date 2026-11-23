@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const role = parseRole(body.role);
-  if (!body.idToken || !body.code || !body.nonce || !role) {
+  if (!body.idToken || !body.code || !body.nonce) {
     return NextResponse.json({ ok: false, error: "invalid_request" }, { status: 422 });
   }
 
@@ -66,6 +66,7 @@ export async function POST(request: Request) {
   }
 
   const target = consumed as { target_type: "patient" | "profile"; target_id: string; intended_role: LinkCodeRole };
+  const resolvedRole = target.intended_role;
 
   // Re-check that the target is still valid before creating a link.
   if (target.intended_role === "volunteer") {
@@ -107,9 +108,9 @@ export async function POST(request: Request) {
 
   const linkRow = {
     line_account_id: account.id,
-    role,
-    patient_id: role === "patient" ? target.target_id : null,
-    profile_id: role === "volunteer" ? target.target_id : null,
+    role: resolvedRole,
+    patient_id: resolvedRole === "patient" ? target.target_id : null,
+    profile_id: resolvedRole === "volunteer" ? target.target_id : null,
     status: "active" as const,
     consented_at: now,
     revoked_at: null,
@@ -148,9 +149,9 @@ export async function POST(request: Request) {
     action: "line_link_created",
     entity_type: "line_account_link",
     entity_id: account.id,
-    after_data: { role, line_user_id: lineUserId }
+    after_data: { role: resolvedRole, line_user_id: lineUserId }
   });
 
   const sessionSet = await setSessionCookie({ lineAccountId: account.id, lineUserId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 });
-  return NextResponse.json({ ok: true, role, session: sessionSet });
+  return NextResponse.json({ ok: true, role: resolvedRole, session: sessionSet });
 }
