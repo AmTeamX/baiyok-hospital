@@ -136,7 +136,7 @@ export default function AdminUsersPage() {
         <span data-label="จัดการ">
           {withInvite ? (
             <div className="link-invite-actions" style={{ flexWrap: "wrap" }}>
-              <LineLinkInvite targetType="profile" targetId={profile.id} role="volunteer" label={profile.line_linked ? "สร้างรหัสใหม่" : "สร้างรหัส LINE"} />
+              {!profile.line_linked && <LineLinkInvite targetType="profile" targetId={profile.id} role="volunteer" label="สร้างรหัส LINE" />}
               {profile.line_linked && (
                 <button className="button secondary" disabled={busy === profile.id} onClick={() => void revoke(profile.id)}>
                   {busy === profile.id ? <LoaderCircle className="spin" size={14} /> : null}ถอนการผูก

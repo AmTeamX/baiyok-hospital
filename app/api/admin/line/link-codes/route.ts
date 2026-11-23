@@ -60,6 +60,10 @@ export async function POST(request: Request) {
     }
   }
 
+  const { data: activeLink, error: linkLookupError } = await supabase.from("line_account_links").select("id").eq(targetType === "patient" ? "patient_id" : "profile_id", body.targetId).eq("role", intendedRole).eq("status", "active").maybeSingle();
+  if (linkLookupError) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 500 });
+  if (activeLink) return NextResponse.json({ ok: false, error: "already_linked" }, { status: 409 });
+
   const token = generateLinkToken();
   const { error } = await supabase.from("line_link_codes").insert({
     target_type: targetType,

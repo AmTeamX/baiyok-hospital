@@ -241,7 +241,7 @@ export function PatientDetail({ id }: { id: string }) {
           <h2>เชื่อมบัญชี LINE</h2>
           <p>{detail.line.linked ? `เชื่อมแล้ว${detail.line.displayName ? ` (${detail.line.displayName})` : ""}` : "ยังไม่ผูกบัญชี LINE"}</p>
           <div className="link-invite-actions" style={{ flexWrap: "wrap" }}>
-            <LineLinkInvite targetType="patient" targetId={detail.patient.id} role="patient" label={detail.line.linked ? "สร้างรหัสใหม่" : "สร้างรหัสเชื่อม LINE"} />
+            {!detail.line.linked && <LineLinkInvite targetType="patient" targetId={detail.patient.id} role="patient" label="สร้างรหัสเชื่อม LINE" />}
             {detail.line.linked && (
               <button className="button secondary" disabled={revoking} onClick={() => void revoke()}>
                 {revoking ? <LoaderCircle className="spin" size={15} /> : null}ถอนการผูก

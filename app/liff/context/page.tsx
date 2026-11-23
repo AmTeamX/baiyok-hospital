@@ -2,6 +2,7 @@
 
 import { HeartPulse, Stethoscope, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import { LiffSessionError } from "@/lib/liff-client";
 
 type Context = { linkId: string; role: "patient" | "volunteer" };
 
@@ -9,21 +10,33 @@ export default function LiffContextPage() {
   const [contexts, setContexts] = useState<Context[]>([]);
   const [phase, setPhase] = useState<"loading" | "ready" | "error" | "busy">("loading");
   const [message, setMessage] = useState("");
+  const [needsLink, setNeedsLink] = useState(false);
 
   useEffect(() => {
     void load();
   }, []);
 
   async function load() {
+    setPhase("loading"); setNeedsLink(false);
     try {
       const response = await fetch("/api/line/me/contexts");
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "unauthorized");
-      setContexts(body.contexts ?? []);
+      if (response.status === 401) {
+        const role = new URLSearchParams(window.location.search).get("role");
+        window.location.replace(`/liff/link?destination=context${role === "patient" || role === "volunteer" ? `&role=${role}` : ""}`);
+        return;
+      }
+      if (!response.ok) throw new LiffSessionError(body.error);
+      const available: Context[] = body.contexts ?? [];
+      setContexts(available);
+      const requestedRole = new URLSearchParams(window.location.search).get("role");
+      const selected = available.find((context) => context.role === requestedRole) ?? (available.length === 1 ? available[0] : null);
+      if (selected) { await choose(selected); return; }
       setPhase("ready");
-    } catch {
+    } catch (error) {
       setPhase("error");
-      setMessage("ยังไม่พบบัญชีที่ผูกไว้ กรุณาผูกบัญชีก่อน");
+      setNeedsLink(error instanceof LiffSessionError && error.code === "account_not_linked");
+      setMessage(error instanceof Error ? error.message : "โหลดบัญชีไม่สำเร็จ กรุณาลองใหม่");
     }
   }
 
@@ -54,9 +67,9 @@ export default function LiffContextPage() {
         {phase === "loading" && <p>กำลังโหลด…</p>}
         {phase === "error" && (
           <section className="appointment-hero">
-            <h2>สลับโหมดไม่ได้</h2>
+            <h2>{needsLink ? "ยังไม่ได้เชื่อมบัญชี" : "เข้าใช้งานไม่สำเร็จ"}</h2>
             <p>{message}</p>
-            <a className="button patient-primary" href="/liff/link">ผูกบัญชี</a>
+            {needsLink ? <a className="button patient-primary" href="/liff/link">ผูกบัญชี LINE</a> : <button className="button patient-primary" onClick={() => void load()}>ลองใหม่</button>}
           </section>
         )}
         {phase === "busy" && <p>กำลังสลับโหมด…</p>}

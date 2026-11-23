@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { CircleAlert, Clock3, LoaderCircle, RotateCcw, Save, UserRoundCheck } from "lucide-react";
 import { type FollowUpDetail } from "@/lib/follow-up";
 import { MISSED_PRIORITIES, MISSED_STATUSES, type MissedPriority, type MissedStatus } from "@/lib/missed";
-import { LineLinkInvite } from "@/components/line-link-invite";
 import { WorkspaceTabs } from "@/components/workspace-tabs";
 import Link from "next/link";
 import { Modal } from "@/components/modal";
@@ -259,8 +258,8 @@ export function CaseDetail({ id }: { id: string }) {
 
       <section className="panel case-summary" hidden={view !== "overview"} style={{ marginBlockStart: "var(--space-lg)" }}>
         <h2>เชื่อมบัญชี LINE</h2>
-        <p>สร้าง QR ให้ผู้ป่วยสแกนในแอป LINE เพื่อผูกบัญชี — ใช้ได้ครั้งเดียว หมดอายุ 15 นาที</p>
-        <LineLinkInvite targetType="patient" targetId={detail.patient.id} role="patient" label="สร้างรหัสเชื่อม LINE" />
+        <p>ตรวจสถานะการเชื่อมบัญชีและจัดการรหัสจากประวัติผู้ป่วย</p>
+        <Link className="button secondary" href={`/patients/${detail.patient.id}`}>เปิดบัญชีผู้ป่วย</Link>
       </section>
 
       </div>

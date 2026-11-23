@@ -76,6 +76,20 @@ beforeEach(() => {
 });
 
 describe("POST /api/line/link/verify", () => {
+  it("does not overwrite an active account link with another code", async () => {
+    mocks.supabase.rpc.mockResolvedValue({ data: { target_type: "patient", target_id: "p-2", intended_role: "patient" }, error: null });
+    queueResults({ patients: [{ data: { id: "p-2" }, error: null }], line_accounts: [{ data: { id: "acct-1" }, error: null }], line_account_links: [{ data: { id: "existing-link" }, error: null }] });
+    const response = await POST(request(validBody()));
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe("already_linked");
+  });
+  it("fails before consuming a linking code when session configuration is missing", async () => {
+    delete process.env.LIFF_SESSION_SECRET;
+    const response = await POST(request(validBody()));
+    expect(response.status).toBe(503);
+    expect((await response.json()).error).toBe("session_not_configured");
+    expect(mocks.supabase.rpc).not.toHaveBeenCalled();
+  });
   it("links a patient on the happy path and sets a session", async () => {
     mocks.supabase.rpc.mockResolvedValue({
       data: { target_type: "patient", target_id: "p-1", intended_role: "patient" },

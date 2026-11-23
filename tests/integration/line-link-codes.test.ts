@@ -44,6 +44,17 @@ beforeEach(() => {
 });
 
 describe("POST /api/admin/line/link-codes", () => {
+  it("does not generate another code for an already linked patient", async () => {
+    mocks.requireClinicalStaff.mockResolvedValue({ mode: "authenticated", userId: actorId, serviceUnitId: "unit-1" });
+    mocks.supabase.from.mockImplementation(queueFrom([
+      () => ({ data: { id: patientId }, error: null }),
+      () => ({ data: { id: "existing-link" }, error: null })
+    ]).from);
+    const response = await POST(request({ targetType: "patient", targetId: patientId, intendedRole: "patient" }));
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe("already_linked");
+    expect(mocks.supabase.from).not.toHaveBeenCalledWith("line_link_codes");
+  });
   it("rejects an unauthenticated caller", async () => {
     mocks.requireClinicalStaff.mockResolvedValue(null);
     expect((await POST(request({ targetType: "patient", targetId: patientId, intendedRole: "patient" }))).status).toBe(401);

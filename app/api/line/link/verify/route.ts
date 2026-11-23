@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { verifyLiffIdToken } from "@/lib/line/liff";
 import { hashLinkToken, type LinkCodeRole } from "@/lib/line/link-code";
-import { consumeNonce, setSessionCookie } from "@/lib/line/session";
+import { consumeNonce, getSessionSecret, setSessionCookie } from "@/lib/line/session";
 import { resolveRichMenuId, linkRichMenuToUser, selectRichMenuKind } from "@/lib/line/rich-menu";
 import { pushLineText } from "@/lib/line";
 
@@ -29,6 +29,7 @@ function linkCodeError(code: string): { status: number; error: string } {
 export async function POST(request: Request) {
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
   if (!liffId) return NextResponse.json({ ok: false, error: "liff_not_configured" }, { status: 503 });
+  if (!getSessionSecret()) return NextResponse.json({ ok: false, error: "session_not_configured" }, { status: 503 });
   // The verify endpoint expects the LINE Login channel ID (the part before '-'
   // in the LIFF ID), not the full LIFF ID. The ID token's `aud` is the channel ID.
   const channelId = liffId.split("-")[0];
@@ -109,6 +110,10 @@ export async function POST(request: Request) {
   if (accountError || !account) {
     return NextResponse.json({ ok: false, error: "account_upsert_failed" }, { status: 500 });
   }
+
+  const { data: existingLink, error: existingLinkError } = await supabase.from("line_account_links").select("id").eq("line_account_id", account.id).eq("role", resolvedRole).eq("status", "active").maybeSingle();
+  if (existingLinkError) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 500 });
+  if (existingLink) return NextResponse.json({ ok: false, error: "already_linked" }, { status: 409 });
 
   const linkRow = {
     line_account_id: account.id,

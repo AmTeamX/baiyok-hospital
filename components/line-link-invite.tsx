@@ -37,7 +37,7 @@ export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
         body: JSON.stringify({ targetType, targetId, intendedRole: role })
       });
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "สร้างรหัสไม่สำเร็จ");
+      if (!response.ok) throw new Error(body.error === "already_linked" ? "บัญชีนี้เชื่อม LINE แล้ว กรุณารีเฟรชหน้าเพื่อดูสถานะล่าสุด" : body.error ?? "สร้างรหัสไม่สำเร็จ");
       const token = String(body.token ?? "");
       const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
       const url = liffId ? `https://liff.line.me/${liffId}?code=${encodeURIComponent(token)}` : `${window.location.origin}/liff/link?code=${encodeURIComponent(token)}`;
