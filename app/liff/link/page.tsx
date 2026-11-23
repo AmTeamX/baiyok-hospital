@@ -2,6 +2,7 @@
 
 import { HeartPulse } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getLiffIdToken } from "@/lib/liff-client";
 
 type Phase = "loading" | "consent" | "busy" | "error" | "success";
 
@@ -31,11 +32,7 @@ export default function LiffLinkPage() {
       const init = await fetch("/api/line/liff/init").then((response) => response.json());
       if (!init.ok) throw new Error("ไม่สามารถเริ่มการยืนยันตัวตนได้");
 
-      const liff = (window as unknown as { liff?: { init?: (options: { liffId: string }) => Promise<void>; getIDToken?: () => string | null } }).liff;
-      if (!liff?.init || typeof liff.getIDToken !== "function") throw new Error("ไม่พบ LIFF SDK");
-      await liff.init({ liffId: init.liffId });
-      const idToken = liff.getIDToken();
-      if (!idToken) throw new Error("กรุณาเปิดหน้านี้จากแอป LINE");
+      const idToken = await getLiffIdToken(init.liffId);
 
       const response = await fetch("/api/line/link/verify", {
         method: "POST",
