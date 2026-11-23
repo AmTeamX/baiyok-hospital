@@ -16,10 +16,14 @@ npm run dev
 
 ## ตั้งค่า Supabase
 
-1. สร้างโปรเจกต์ Supabase และรัน `supabase/migrations/001_initial.sql` ใน SQL editor
+1. สร้างโปรเจกต์ Supabase และรัน `supabase/migrations/001_initial.sql`, `002_production_workflows.sql` และ `003_rls_policies.sql` ตามลำดับใน SQL editor
 2. คัดลอก `.env.example` เป็น `.env.local` แล้วเติมค่าจริง โดยห้าม commit ไฟล์ที่มี secret
 3. เติม `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` และ `SUPABASE_SERVICE_ROLE_KEY` ใน `.env.local`
-4. สร้างผู้ใช้เจ้าหน้าที่ใน Supabase Auth แล้วเพิ่มแถวที่ตรงกันใน `profiles`
+4. สร้างผู้ใช้เจ้าหน้าที่ใน Supabase Auth แล้วเพิ่มแถวที่ตรงกันใน `profiles` พร้อม `service_unit_id` ของ รพ.สต. สระโคล่
+5. สำหรับ local/staging ให้รัน `supabase/seed.sql` หลังสร้าง Auth users ตัวอย่าง `admin+demo@example.test`, `nurse+demo@example.test` และ `volunteer+demo@example.test`; seed นี้ใช้ข้อมูลสังเคราะห์เท่านั้น
+
+ไฟล์ `lib/supabase/database.types.ts` เป็น type contract ที่ต้อง regenerate เมื่อ schema เปลี่ยน และห้ามใช้ `any` เพื่อหลบ schema mismatch
+ไฟล์ `supabase/tests/rls_policies.sql` ใช้ตรวจ RLS ในฐานข้อมูลทดสอบที่เปิด pgTAP แล้ว ห้ามรันชุด seed กับ production โดยตรง
 
 ## ตั้งค่า LINE OA
 
