@@ -42,5 +42,37 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: "อัปเดตคำขอไม่สำเร็จ" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, mode: "database", ...(data as Record<string, unknown>) });
+  const result = data as Record<string, unknown>;
+  const status = String(result.status ?? body.status);
+
+  const supabase = createAdminClient();
+  const { data: requestRow } = await supabase
+    .from("patient_requests")
+    .select("id, patient_id, appointment_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (requestRow) {
+    const { data: link } = await supabase
+      .from("line_account_links")
+      .select("line_account_id")
+      .eq("patient_id", requestRow.patient_id)
+      .eq("role", "patient")
+      .eq("status", "active")
+      .maybeSingle();
+    if (link?.line_account_id) {
+      await supabase.from("notification_logs").insert({
+        appointment_id: requestRow.appointment_id ?? null,
+        patient_request_id: id,
+        recipient_line_account_id: link.line_account_id,
+        kind: "patient_request_status",
+        channel: "line",
+        status: "pending",
+        idempotency_key: `patient_request_status:${id}:${status}`,
+        attempt_count: 0,
+        next_attempt_at: new Date().toISOString()
+      });
+    }
+  }
+
+  return NextResponse.json({ ok: true, mode: "database", ...result });
 }

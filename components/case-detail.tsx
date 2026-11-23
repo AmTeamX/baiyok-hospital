@@ -84,6 +84,7 @@ export function CaseDetail({ id }: { id: string }) {
         setDetail(null);
       } else {
         setDetail(json.followUp);
+        setSelectedVolunteer("");
         setStatus(json.followUp.status);
         setPriority(json.followUp.priority);
         setMissedReason(json.followUp.missedReason ?? "");
@@ -252,15 +253,24 @@ export function CaseDetail({ id }: { id: string }) {
 
       <section className="panel case-summary" hidden={view !== "overview"} style={{ marginBlockStart: "var(--space-lg)" }}>
         <h2>มอบหมาย อสม.</h2>
-        <p>ผู้รับผิดชอบปัจจุบัน: {detail.assigneeName ?? "ยังไม่มอบหมาย"}</p>
+        <div className="assignee-current" role="group" aria-label="ผู้รับผิดชอบปัจจุบัน">
+          <span className="assignee-current-icon" aria-hidden="true"><UserRoundCheck size={20} /></span>
+          <div>
+            <span>ผู้รับผิดชอบปัจจุบัน</span>
+            <strong>{detail.assigneeName ?? "ยังไม่มอบหมาย"}</strong>
+          </div>
+          <span className={`assignee-status ${detail.assigneeName ? "assigned" : "unassigned"}`}>
+            {detail.assigneeName ? "กำลังรับผิดชอบ" : "รอมอบหมาย"}
+          </span>
+        </div>
         <div className="case-form">
-          <label className="field"><span>เลือก อสม.</span>
+          <label className="field"><span>เปลี่ยนเป็น อสม.</span>
             <select value={selectedVolunteer} onChange={(event) => setSelectedVolunteer(event.target.value)}>
-              <option value="">— เลือก อสม. —</option>
+              <option value="">เลือก อสม. ที่ต้องการเปลี่ยน</option>
               {volunteers.map((volunteer) => <option key={volunteer.id} value={volunteer.id}>{volunteer.full_name}</option>)}
             </select>
           </label>
-          <button className="button primary" onClick={() => void assign()} disabled={!selectedVolunteer || assigning}>{assigning ? <LoaderCircle className="spin" size={16} /> : "มอบหมาย/เปลี่ยน อสม."}</button>
+          <button className="button primary" onClick={() => void assign()} disabled={!selectedVolunteer || selectedVolunteer === detail.assignedVolunteerId || assigning}>{assigning ? <LoaderCircle className="spin" size={16} /> : "ยืนยันเปลี่ยนผู้รับผิดชอบ"}</button>
         </div>
         {assignMessage && <p className="form-error" role="status">{assignMessage}</p>}
       </section>

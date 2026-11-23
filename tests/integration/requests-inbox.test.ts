@@ -66,7 +66,12 @@ describe("PATCH /api/requests/[id]", () => {
   it("transitions via the RPC", async () => {
     mocks.requireClinicalStaff.mockResolvedValue({ mode: "authenticated", userId: actorId, serviceUnitId: "unit-1" });
     const rpc = vi.fn().mockResolvedValue({ data: { request_id: requestId, status: "resolved" }, error: null });
-    mocks.createAdminClient.mockReturnValue({ rpc });
+    const requestBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+    };
+    mocks.createAdminClient.mockReturnValue({ rpc, from: vi.fn(() => requestBuilder) });
 
     const response = await PATCH(request({ status: "resolved" }), { params });
     expect(response.status).toBe(200);

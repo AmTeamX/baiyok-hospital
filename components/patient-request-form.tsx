@@ -8,7 +8,7 @@ import {
   type PatientRequestType
 } from "@/lib/patient";
 
-export function PatientRequestForm({ type }: { type: PatientRequestType }) {
+export function PatientRequestForm({ type, appointmentId, requestTypeLabel }: { type: PatientRequestType; appointmentId?: string; requestTypeLabel?: string }) {
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
   const [phase, setPhase] = useState<"ready" | "busy" | "done" | "error">("ready");
@@ -21,7 +21,7 @@ export function PatientRequestForm({ type }: { type: PatientRequestType }) {
       const response = await fetch("/api/patient/me/requests", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ requestType: type, reasonCode: reason, note })
+        body: JSON.stringify({ requestType: type, reasonCode: reason, note, appointmentId })
       });
       const body = await response.json();
       if (response.status === 401 || response.status === 403) {
@@ -57,8 +57,8 @@ export function PatientRequestForm({ type }: { type: PatientRequestType }) {
       {phase !== "done" && phase !== "error" && (
         <>
           <section className="appointment-hero">
-            <h2>{PATIENT_REQUEST_TYPE_LABELS[type]}</h2>
-            <p>เลือกเหตุผลที่ตรงกับคุณที่สุด ระบบจะส่งเรื่องให้เจ้าหน้าที่ติดต่อกลับ</p>
+            <h2>{requestTypeLabel ?? PATIENT_REQUEST_TYPE_LABELS[type]}</h2>
+            <p>{appointmentId ? "คำขอนี้จะผูกกับนัดที่คุณเลือกไว้ เจ้าหน้าที่จะเลื่อนหรือยกเลิกนัดให้หลังจากประสานแล้ว" : "เลือกเหตุผลที่ตรงกับคุณที่สุด ระบบจะส่งเรื่องให้เจ้าหน้าที่ติดต่อกลับ"}</p>
           </section>
 
           <fieldset className="volunteer-result-grid">

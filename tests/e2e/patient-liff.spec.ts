@@ -32,6 +32,23 @@ test("patient sees an empty state without appointments", async ({ page }) => {
   await expect(page.getByText("ยังไม่มีนัดถัดไป")).toBeVisible();
 });
 
+test("patient sees a past missed appointment and can report a problem", async ({ page }) => {
+  await page.route(/\/api\/patient\/me\/appointments$/, (route: Route) =>
+    route.fulfill({
+      json: {
+        ok: true,
+        appointments: [],
+        history: [{ id: "a2", appointmentAt: "2026-10-01T08:30:00+07:00", clinic: "คลินิกเบาหวาน", status: "missed" }]
+      }
+    })
+  );
+  await page.goto("/liff/appointments");
+
+  await expect(page.getByText("นัดที่ผ่านมา")).toBeVisible();
+  await expect(page.getByText("ขาดนัด")).toBeVisible();
+  await expect(page.getByRole("link", { name: "แจ้งปัญหาเรื่องนัดนี้" })).toHaveAttribute("href", "/liff/problem?appointmentId=a2");
+});
+
 test("patient answers a health question and sees immediate feedback", async ({ page }) => {
   await page.route(/\/api\/patient\/me\/health-content$/, (route: Route) =>
     route.fulfill({

@@ -38,15 +38,25 @@ describe("GET /api/patient/me/appointments", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns the patient's upcoming appointments only", async () => {
+  it("returns the patient's upcoming appointments and past-appointment history", async () => {
     mocks.requirePatient.mockResolvedValue({ ok: true, identity });
     mocks.createAdminClient.mockReturnValue({
-      from: vi.fn(() => builder(() => ({ data: [{ id: "a1", appointment_at: "2026-12-01T08:30:00+07:00", clinic: "คลินิกความดัน", status: "scheduled" }], error: null })))
+      from: vi.fn(() => builder(() => ({
+        data: [
+          { id: "a1", appointment_at: "2026-12-01T08:30:00+07:00", clinic: "คลินิกความดัน", status: "scheduled" },
+          { id: "a2", appointment_at: "2026-10-01T08:30:00+07:00", clinic: "คลินิกเบาหวาน", status: "missed" }
+        ],
+        error: null
+      })))
     });
 
     const response = await GET();
     expect(response.status).toBe(200);
-    expect((await response.json())).toMatchObject({ ok: true, appointments: [{ id: "a1", clinic: "คลินิกความดัน" }] });
+    expect((await response.json())).toMatchObject({
+      ok: true,
+      appointments: [{ id: "a1", clinic: "คลินิกความดัน" }],
+      history: [{ id: "a2", clinic: "คลินิกเบาหวาน", status: "missed" }]
+    });
   });
 
   it("rejects a revoked context", async () => {

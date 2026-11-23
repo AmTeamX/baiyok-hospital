@@ -38,8 +38,40 @@ export function buildSlaReminderMessage(followUpId: string, appUrl?: string): st
   return `งานติดตามที่ได้รับมอบหมายยังไม่มีผล\nกรุณาเปิดลิงก์เพื่อบันทึกผลการติดตาม\n${assignmentDeepLink(followUpId, appUrl)}`;
 }
 
+export function patientAppointmentDeepLink(appointmentId: string, appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ""): string {
+  const destination = encodeURIComponent("appointments");
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  return liffId ? `https://liff.line.me/${liffId}?destination=${destination}` : `${appUrl.replace(/\/+$/, "")}/liff/appointments`;
+}
+
+export function buildPatientRequestMessage(status: string, appUrl?: string): string {
+  const labels: Record<string, string> = {
+    new: "ได้รับคำขอของคุณแล้ว",
+    acknowledged: "เจ้าหน้าที่รับเรื่องคำขอของคุณแล้ว",
+    contacted: "เจ้าหน้าที่ติดต่อเรื่องคำขอของคุณแล้ว",
+    resolved: "คำขอของคุณได้รับการดำเนินการเรียบร้อยแล้ว",
+    unable_to_contact: "เจ้าหน้าที่พยายามติดต่อแล้วแต่ยังติดต่อไม่ได้ กรุณาตรวจสอบช่องทางติดต่อ"
+  };
+  return `${labels[status] ?? "มีการอัปเดตคำขอของคุณ"}\nดูรายละเอียดวันนัด: ${patientAppointmentDeepLink("", appUrl)}`;
+}
+
+export function buildAppointmentStatusMessage(status: "rescheduled" | "cancelled", appointmentId: string, appUrl?: string): string {
+  const base = status === "cancelled"
+    ? "นัดของคุณถูกยกเลิก"
+    : "นัดของคุณถูกเลื่อนเรียบร้อยแล้ว";
+  return `${base}\nโปรดตรวจสอบวัน เวลา และคลินิกล่าสุด:\n${patientAppointmentDeepLink(appointmentId, appUrl)}`;
+}
+
 /** Pick the outbound text for a notification kind without exposing clinical detail. */
-export function buildNotificationMessage(kind: string, followUpId: string, appUrl?: string): string {
+export function buildNotificationMessage(
+  kind: string,
+  followUpId: string,
+  appUrl?: string,
+  options: { appointmentId?: string | null; patientRequestStatus?: string } = {}
+): string {
+  if (kind === "patient_request_status") return buildPatientRequestMessage(options.patientRequestStatus ?? "new", appUrl);
+  if (kind === "appointment_rescheduled") return buildAppointmentStatusMessage("rescheduled", options.appointmentId ?? followUpId, appUrl);
+  if (kind === "appointment_cancelled") return buildAppointmentStatusMessage("cancelled", options.appointmentId ?? followUpId, appUrl);
   return kind === "follow_up_sla_reminder"
     ? buildSlaReminderMessage(followUpId, appUrl)
     : buildAssignmentMessage(followUpId, appUrl);
@@ -62,12 +94,15 @@ export type DeliveryResult =
  * for this delivery (1-based). The caller records the returned state in the outbox.
  */
 export async function deliverNotification(
-  notification: { id: string; followUpId: string | null; kind: string; lineUserId: string | null; attemptCountAfterClaim: number },
+  notification: { id: string; followUpId: string | null; kind: string; lineUserId: string | null; attemptCountAfterClaim: number; appointmentId?: string | null; patientRequestStatus?: string },
   send: (lineUserId: string, message: string) => Promise<void>,
   appUrl?: string
 ): Promise<DeliveryResult> {
   if (isUnlinkedRecipient(notification.lineUserId)) return { status: "unlinked" };
-  const message = buildNotificationMessage(notification.kind, notification.followUpId ?? notification.id, appUrl);
+  const message = buildNotificationMessage(notification.kind, notification.followUpId ?? notification.id, appUrl, {
+    appointmentId: notification.appointmentId,
+    patientRequestStatus: notification.patientRequestStatus
+  });
   try {
     await send(notification.lineUserId as string, message);
     return { status: "sent" };

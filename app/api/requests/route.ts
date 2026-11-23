@@ -37,6 +37,7 @@ export async function GET(request: Request) {
     statusLabel: PATIENT_REQUEST_STATUS_LABELS[row.status as keyof typeof PATIENT_REQUEST_STATUS_LABELS] ?? String(row.status),
     assignedTo: row.assigned_to ?? null,
     assigneeName: row.assignee_name ?? null,
+    appointmentId: row.appointment_id ?? null,
     patientName: row.patient_name ?? null,
     createdAt: row.created_at ?? null,
     acknowledgedAt: row.acknowledged_at ?? null,

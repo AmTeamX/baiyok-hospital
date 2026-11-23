@@ -297,6 +297,13 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 .case-summary dd { margin: 0; color: var(--color-ink); }
 .case-form { display: grid; gap: var(--space-sm); }
 .case-form .button { justify-self: start; }
+.assignee-current { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-sm); margin-block-end: var(--space-lg); padding: var(--space-md); border: 2px solid var(--color-accent); border-radius: var(--radius-md); background: var(--color-accent-soft); }
+.assignee-current-icon { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: var(--radius-round); background: var(--color-accent); color: var(--color-accent-ink); }
+.assignee-current > div { display: grid; gap: 0.15rem; }
+.assignee-current > div span { color: var(--color-accent-strong); font-size: var(--text-xs); font-weight: 800; }
+.assignee-current > div strong { font-size: 1.125rem; }
+.assignee-status { padding: 0.35rem 0.55rem; border-radius: var(--radius-round); background: var(--color-success-soft); color: var(--color-success); font-size: var(--text-xs); font-weight: 800; white-space: nowrap; }
+.assignee-status.unassigned { background: var(--color-warning-soft); color: var(--color-warning); }
 .timeline { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .timeline li { display: grid; grid-template-columns: 1rem minmax(0, 1fr); gap: var(--space-sm); padding-block: var(--space-sm); border-block-start: var(--rule-thin) solid var(--color-rule); }
 .timeline li:first-child { border-block-start: 0; }
@@ -530,6 +537,8 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 }
 
 @media (max-width: 39.99rem) {
+  .assignee-current { grid-template-columns: auto minmax(0, 1fr); }
+  .assignee-status { grid-column: 2; justify-self: start; }
   .search-pill { width: auto; margin-inline-start: auto; border: 0; background: transparent; }
   .search-pill span, .search-pill kbd { display: none; }
   .page-heading .button { width: 100%; }

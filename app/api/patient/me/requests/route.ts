@@ -23,7 +23,7 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("patient_requests")
-    .select("id, request_type, reason_code, note, status, created_at, resolved_at")
+    .select("id, appointment_id, request_type, reason_code, note, status, created_at, resolved_at")
     .eq("patient_id", result.identity.patientId)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -36,6 +36,7 @@ export async function GET() {
     reasonCode: item.reason_code,
     reasonLabel: PATIENT_REQUEST_REASON_LABELS[item.reason_code] ?? item.reason_code,
     note: item.note,
+    appointmentId: item.appointment_id,
     status: item.status,
     statusLabel: PATIENT_REQUEST_STATUS_LABELS[item.status as keyof typeof PATIENT_REQUEST_STATUS_LABELS] ?? item.status,
     createdAt: item.created_at,
@@ -68,6 +69,27 @@ export async function POST(request: Request) {
   const appointmentId = typeof body.appointmentId === "string" && uuidPattern.test(body.appointmentId) ? body.appointmentId : null;
 
   const supabase = createAdminClient();
+  let recipientLineAccountId: string | null = null;
+  const { data: activeLink } = await supabase
+    .from("line_account_links")
+    .select("line_account_id")
+    .eq("patient_id", result.identity.patientId)
+    .eq("role", "patient")
+    .eq("status", "active")
+    .maybeSingle();
+  if (activeLink?.line_account_id) recipientLineAccountId = activeLink.line_account_id;
+
+  if (appointmentId) {
+    const { data: appointment, error: appointmentError } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("id", appointmentId)
+      .eq("patient_id", result.identity.patientId)
+      .maybeSingle();
+    if (appointmentError) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 500 });
+    if (!appointment) return NextResponse.json({ ok: false, error: "invalid_appointment" }, { status: 422 });
+  }
+
   const { data, error } = await supabase
     .from("patient_requests")
     .insert({
@@ -88,6 +110,20 @@ export async function POST(request: Request) {
     entity_id: data.id,
     after_data: { request_type: type, reason_code: body.reasonCode }
   });
+
+  if (recipientLineAccountId) {
+    await supabase.from("notification_logs").insert({
+      appointment_id: appointmentId,
+      patient_request_id: data.id,
+      recipient_line_account_id: recipientLineAccountId,
+      kind: "patient_request_status",
+      channel: "line",
+      status: "pending",
+      idempotency_key: `patient_request_status:${data.id}:new`,
+      attempt_count: 0,
+      next_attempt_at: new Date().toISOString()
+    });
+  }
 
   return NextResponse.json({ ok: true, id: data.id, status: "new" });
 }

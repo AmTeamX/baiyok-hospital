@@ -18,7 +18,7 @@ type Result = { data: unknown; error: unknown };
 
 function builder(resolveTo: () => Result) {
   const b: Record<string, unknown> = {};
-  for (const method of ["select", "eq", "order", "limit", "insert", "single"]) {
+  for (const method of ["select", "eq", "order", "limit", "insert", "single", "maybeSingle"]) {
     b[method] = vi.fn(() => b);
   }
   b.then = (onFulfilled: (value: Result) => unknown) => Promise.resolve().then(resolveTo).then(onFulfilled);
@@ -79,6 +79,17 @@ describe("POST /api/patient/me/requests", () => {
   it("rejects a reason that does not match the type", async () => {
     mocks.requirePatient.mockResolvedValue({ ok: true, identity });
     const response = await POST(request({ requestType: "problem", reasonCode: "medication" }));
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects an appointment that does not belong to the patient", async () => {
+    mocks.requirePatient.mockResolvedValue({ ok: true, identity });
+    mocks.supabase.from.mockReturnValue(builder(() => ({ data: null, error: null })));
+    const response = await POST(request({
+      requestType: "problem",
+      reasonCode: "travel_difficulty",
+      appointmentId: "11111111-1111-4111-8111-111111111111"
+    }));
     expect(response.status).toBe(422);
   });
 

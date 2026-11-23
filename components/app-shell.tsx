@@ -13,6 +13,7 @@ const navigation: NavigationGroup[] = [
   { label: "งานประจำวัน", items: [
     { href: "/", label: "ศูนย์งาน", description: "ภาพรวมและงานเร่งด่วน", icon: House, roles: ["admin", "nurse"] },
     { href: "/patients", label: "ผู้ป่วย", description: "ทะเบียนและผู้ขาดนัด", icon: Users, roles: ["admin", "nurse"] },
+    { href: "/appointments", label: "จัดการนัด", description: "ย้ายหรือยกเลิกนัดผู้ป่วย", icon: CalendarDays, roles: ["admin", "nurse"] },
     { href: "/cases", label: "จัดการเคส", description: "สร้าง มอบหมาย และติดตามเคส", icon: ClipboardList, roles: ["admin", "nurse"] },
     { href: "/requests", label: "คำขอผู้ป่วย", description: "รับเรื่องและติดตามสถานะ", icon: Inbox, roles: ["admin", "nurse"] },
     { href: "/queue", label: "QR เช็กอิน", description: "สร้าง QR เช็กอินสำหรับนัด", icon: QrCode, roles: ["admin", "nurse"] }
@@ -28,6 +29,7 @@ const navigation: NavigationGroup[] = [
 ];
 
 const routeNames: Record<string, string> = {
+  appointments: "จัดการนัด",
   cases: "จัดการเคส", new: "สร้างเคส",
   patients: "ผู้ป่วย", missed: "ผู้ขาดนัด", add: "เพิ่มข้อมูล", import: "นำเข้าข้อมูล", imports: "ประวัตินำเข้า",
   requests: "คำขอผู้ป่วย", queue: "QR เช็กอิน", notifications: "การส่งข้อความ", education: "สื่อสุขภาพ",

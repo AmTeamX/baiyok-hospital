@@ -12,9 +12,9 @@ export async function dispatchNotifications(options: { notificationId?: string; 
 
   let query = supabase
     .from("notification_logs")
-    .select("id, follow_up_id, recipient_profile_id, kind, attempt_count")
+    .select("id, appointment_id, follow_up_id, patient_request_id, recipient_profile_id, recipient_line_account_id, kind, attempt_count")
     .eq("channel", "line")
-    .in("kind", ["follow_up_assigned", "follow_up_sla_reminder"])
+    .in("kind", ["follow_up_assigned", "follow_up_sla_reminder", "patient_request_status", "appointment_rescheduled", "appointment_cancelled"])
     .in("status", ["pending", "failed"])
     .lte("next_attempt_at", nowIso)
     .order("next_attempt_at", { ascending: true })
@@ -40,6 +40,32 @@ export async function dispatchNotifications(options: { notificationId?: string; 
   const accountMap = new Map((accounts ?? []).map((account: { id: string; line_user_id: string | null }) => [account.id, account.line_user_id]));
   const lineUserIdMap = new Map((links ?? []).map((link: { profile_id: string; line_account_id: string }) => [link.profile_id, accountMap.get(link.line_account_id) ?? null]));
 
+  const directAccountIds = [...new Set(candidates
+    .map((item: { recipient_line_account_id: string | null }) => item.recipient_line_account_id)
+    .filter(Boolean))] as string[];
+  const directAccountMap = new Map<string, string>();
+  if (directAccountIds.length) {
+    const { data: directAccounts } = await supabase
+      .from("line_accounts")
+      .select("id, line_user_id")
+      .in("id", directAccountIds);
+    for (const account of directAccounts ?? []) {
+      if (account.line_user_id) directAccountMap.set(account.id, account.line_user_id);
+    }
+  }
+
+  const patientRequestIds = [...new Set(candidates
+    .map((item: { patient_request_id: string | null }) => item.patient_request_id)
+    .filter(Boolean))] as string[];
+  const patientRequestStatusMap = new Map<string, string>();
+  if (patientRequestIds.length) {
+    const { data: requestRows } = await supabase
+      .from("patient_requests")
+      .select("id, status")
+      .in("id", patientRequestIds);
+    for (const row of requestRows ?? []) patientRequestStatusMap.set(row.id, row.status);
+  }
+
   let sent = 0;
   let failed = 0;
   let unlinked = 0;
@@ -56,9 +82,21 @@ export async function dispatchNotifications(options: { notificationId?: string; 
       .single();
     if (!claimed) continue;
 
-    const lineUserId = candidate.recipient_profile_id ? lineUserIdMap.get(candidate.recipient_profile_id) ?? null : null;
+    const lineUserId = candidate.recipient_profile_id
+      ? lineUserIdMap.get(candidate.recipient_profile_id) ?? null
+      : candidate.recipient_line_account_id
+        ? directAccountMap.get(candidate.recipient_line_account_id) ?? null
+        : null;
     const result = await deliverNotification(
-      { id: candidate.id, followUpId: candidate.follow_up_id, kind: candidate.kind, lineUserId, attemptCountAfterClaim: candidate.attempt_count + 1 },
+      {
+        id: candidate.id,
+        followUpId: candidate.follow_up_id,
+        kind: candidate.kind,
+        lineUserId,
+        attemptCountAfterClaim: candidate.attempt_count + 1,
+        appointmentId: candidate.appointment_id,
+        patientRequestStatus: candidate.patient_request_id ? patientRequestStatusMap.get(candidate.patient_request_id) : undefined
+      },
       (to, message) => pushLineText(to, message, candidate.id)
     );
 
