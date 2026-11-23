@@ -183,7 +183,8 @@ export async function setDefaultRichMenu(richMenuId: string, deps: RichMenuDeps)
 
 export async function uploadRichMenuImage(richMenuId: string, image: Uint8Array, deps: RichMenuDeps): Promise<boolean> {
   const fetchImpl = deps.fetchImpl ?? fetch;
-  const response = await fetchImpl(`${LINE_API}/richmenu/${encodeURIComponent(richMenuId)}/content`, {
+  // LINE serves binary rich-menu content from api-data.line.me, not api.line.me.
+  const response = await fetchImpl(`https://api-data.line.me/v2/bot/richmenu/${encodeURIComponent(richMenuId)}/content`, {
     method: "POST",
     headers: { authorization: `Bearer ${deps.channelAccessToken}`, "content-type": deps.contentType ?? "image/png" },
     body: image as BodyInit
