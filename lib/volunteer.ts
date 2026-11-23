@@ -16,6 +16,19 @@ export type VolunteerChannel = "phone" | "visit" | "line" | "other";
 export type VolunteerTaskStatus = "pending" | "assigned" | "contacted" | "rescheduled" | "returned" | "closed";
 export type VolunteerTaskPriority = "normal" | "high" | "urgent";
 
+export function volunteerLoadErrorMessage(code: string): string {
+  const messages: Record<string, string> = {
+    unauthorized: "การเข้าสู่ระบบหมดอายุ กรุณาเปิดเมนูงานของฉันใหม่",
+    context_required: "กรุณาเลือกโหมด อสม. เพื่อดูงานของคุณ",
+    context_revoked: "บัญชี อสม. ถูกถอนการเชื่อม กรุณาติดต่อเจ้าหน้าที่",
+    not_volunteer: "ไม่พบข้อมูล อสม. สำหรับบัญชีนี้ กรุณาติดต่อเจ้าหน้าที่",
+    inactive: "บัญชี อสม. ถูกระงับ กรุณาติดต่อเจ้าหน้าที่",
+    database_required: "ระบบข้อมูลยังไม่พร้อม กรุณาลองใหม่ภายหลัง",
+    query_failed: "โหลดข้อมูลจากระบบไม่สำเร็จ กรุณาลองใหม่"
+  };
+  return messages[code] ?? "เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่";
+}
+
 export const VOLUNTEER_RESULT_CODES: VolunteerResultCode[] = [
   "contacted_will_come",
   "wants_reschedule",
@@ -151,8 +164,7 @@ export type VolunteerTaskRow = {
   assigned_at: string | null;
   contacted_at: string | null;
   missed_reason: string | null;
-  appointments: MaybeMany<{ appointment_at: string; clinic: string }>;
-  patients: MaybeMany<{ full_name: string; village: string | null; phone: string | null }>;
+  appointments: MaybeMany<{ appointment_at: string; clinic: string; patients: MaybeMany<{ full_name: string; village: string | null; phone: string | null }> }>;
 };
 
 function first<T>(value: MaybeMany<T>): T | null {
@@ -163,7 +175,7 @@ function first<T>(value: MaybeMany<T>): T | null {
 /** Map a raw DB row (nested relations normalized) to a minimal volunteer task. */
 export function mapVolunteerTaskRow(row: VolunteerTaskRow, slaHours: number, now = new Date()): VolunteerTask {
   const appointment = first(row.appointments);
-  const patient = first(row.patients);
+  const patient = first(appointment?.patients);
   const status = (row.status as VolunteerTaskStatus) ?? "pending";
   return {
     id: row.id,

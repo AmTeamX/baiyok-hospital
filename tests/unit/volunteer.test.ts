@@ -90,8 +90,7 @@ describe("mapVolunteerTaskRow", () => {
     assigned_at: "2026-11-22T00:00:00.000Z",
     contacted_at: null,
     missed_reason: "ลืมวันนัด",
-    appointments: { appointment_at: "2026-11-21T08:00:00+07:00", clinic: "คลินิกความดัน" },
-    patients: { full_name: "นายทดสอบ", village: "สระโคล่", phone: "0811111111" }
+    appointments: { appointment_at: "2026-11-21T08:00:00+07:00", clinic: "คลินิกความดัน", patients: { full_name: "นายทดสอบ", village: "สระโคล่", phone: "0811111111" } }
   };
 
   it("normalizes a single related row and computes overdue", () => {
@@ -104,7 +103,7 @@ describe("mapVolunteerTaskRow", () => {
 
   it("handles relation rows returned as arrays", () => {
     const task = mapVolunteerTaskRow(
-      { ...base, appointments: [base.appointments], patients: [base.patients] },
+      { ...base, appointments: [{ ...base.appointments, patients: [base.appointments.patients] }] },
       48,
       now
     );

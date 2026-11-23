@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   VOLUNTEER_PRIORITY_LABELS,
   VOLUNTEER_TASK_STATUS_LABELS,
+  volunteerLoadErrorMessage,
   type VolunteerTaskPriority,
   type VolunteerTaskStatus
 } from "@/lib/volunteer";
@@ -37,12 +38,16 @@ export function VolunteerTaskList({ filter }: { filter: string }) {
     try {
       const response = await fetch(`/api/volunteer/tasks?filter=${encodeURIComponent(filter)}`);
       const body = await response.json();
+      if (response.status === 401 || (response.status === 403 && body.error === "context_required")) {
+        window.location.replace("/liff/link?destination=context&role=volunteer");
+        return;
+      }
       if (!response.ok) throw new Error(body.error ?? "unauthorized");
       setTasks(body.tasks ?? []);
       setPhase("ready");
     } catch (error) {
       setPhase("error");
-      setMessage(error instanceof Error ? error.message : "โหลดงานไม่สำเร็จ");
+      setMessage(volunteerLoadErrorMessage(error instanceof Error ? error.message : "network"));
     }
   }, [filter]);
 

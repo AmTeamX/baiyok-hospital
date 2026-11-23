@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   const statuses = taskFilterToStatuses(filter);
   let query = supabase
     .from("follow_ups")
-    .select("id, status, priority, assigned_at, contacted_at, missed_reason, appointments(appointment_at, clinic), patients(full_name, village, phone)")
+    .select("id, status, priority, assigned_at, contacted_at, missed_reason, appointments!follow_ups_appointment_id_fkey(appointment_at, clinic, patients(full_name, village, phone))")
     .eq("assigned_volunteer_id", result.identity.profileId)
     .in("status", statuses)
     .order("updated_at", { ascending: false });

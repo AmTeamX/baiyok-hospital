@@ -49,8 +49,7 @@ const taskRow = {
   contacted_at: null,
   missed_reason: "ลืมวันนัด",
   version: 1,
-  appointments: { appointment_at: "2026-11-21T08:00:00+07:00", clinic: "คลินิกความดัน" },
-  patients: { full_name: "นายทดสอบ", village: "สระโคล่", phone: "0811111111" }
+  appointments: { appointment_at: "2026-11-21T08:00:00+07:00", clinic: "คลินิกความดัน", patients: { full_name: "นายทดสอบ", village: "สระโคล่", phone: "0811111111" } }
 };
 
 function request(url: string, init?: RequestInit) {
@@ -86,10 +85,11 @@ describe("GET /api/volunteer/me", () => {
 describe("GET /api/volunteer/tasks", () => {
   it("lists tasks scoped to the volunteer and computes SLA", async () => {
     mocks.requireVolunteer.mockResolvedValue({ ok: true, identity });
-    mocks.createAdminClient.mockReturnValue(queueSupabase([
+    const db = queueSupabase([
       () => ({ data: { sla_hours: 48 }, error: null }),
       () => ({ data: [taskRow], error: null })
-    ]));
+    ]);
+    mocks.createAdminClient.mockReturnValue(db);
 
     const response = await getTasks(request("http://localhost/api/volunteer/tasks?filter=all"));
     const body = await response.json();
@@ -97,6 +97,8 @@ describe("GET /api/volunteer/tasks", () => {
     expect(body.tasks).toHaveLength(1);
     expect(body.tasks[0].patient.fullName).toBe("นายทดสอบ");
     expect(body.tasks[0]).not.toHaveProperty("hn");
+    const taskQuery = db.from.mock.results[1].value;
+    expect(taskQuery.select).toHaveBeenCalledWith(expect.stringContaining("appointments!follow_ups_appointment_id_fkey(appointment_at, clinic, patients("));
   });
 
   it("rejects an invalid filter", async () => {
@@ -117,14 +119,18 @@ describe("GET /api/volunteer/tasks/[id]", () => {
 
   it("returns a task assigned to the volunteer", async () => {
     mocks.requireVolunteer.mockResolvedValue({ ok: true, identity });
-    mocks.createAdminClient.mockReturnValue(queueSupabase([
+    const db = queueSupabase([
       () => ({ data: { sla_hours: 48 }, error: null }),
       () => ({ data: taskRow, error: null })
-    ]));
+    ]);
+    mocks.createAdminClient.mockReturnValue(db);
 
     const response = await getTask(request("http://localhost/api/volunteer/tasks/x"), { params });
     expect(response.status).toBe(200);
-    expect((await response.json()).task.version).toBe(1);
+    const task = (await response.json()).task;
+    expect(task.version).toBe(1);
+    expect(task.patient.fullName).toBe("นายทดสอบ");
+    expect(db.from.mock.results[1].value.select).toHaveBeenCalledWith(expect.stringContaining("appointments!follow_ups_appointment_id_fkey(appointment_at, clinic, patients("));
   });
 
   it("returns 404 when the task is not the volunteer's (IDOR)", async () => {

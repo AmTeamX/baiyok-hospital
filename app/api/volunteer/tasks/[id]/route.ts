@@ -30,7 +30,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   const { data, error } = await supabase
     .from("follow_ups")
-    .select("id, status, priority, assigned_at, contacted_at, missed_reason, version, appointments(appointment_at, clinic), patients(full_name, village, phone)")
+    .select("id, status, priority, assigned_at, contacted_at, missed_reason, version, appointments!follow_ups_appointment_id_fkey(appointment_at, clinic, patients(full_name, village, phone))")
     .eq("id", id)
     .eq("assigned_volunteer_id", result.identity.profileId)
     .maybeSingle();
