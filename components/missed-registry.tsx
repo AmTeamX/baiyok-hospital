@@ -130,7 +130,9 @@ export function MissedRegistry() {
 
       <PatientTabs />
 
-      <section className="panel table-panel">
+      <section className="panel table-panel missed-panel">
+        <details className="filter-disclosure" open={Boolean(urlFilters.status || urlFilters.area || urlFilters.assignee || urlFilters.priority || urlFilters.from || urlFilters.to || urlFilters.unassignedOnly)}>
+          <summary>ค้นหาและกรองผู้ขาดนัด <span>สถานะ · พื้นที่ · ผู้รับผิดชอบ</span></summary>
         <div className="registry-filters">
           <label className="field">
             <span>ค้นหา</span>
@@ -200,6 +202,7 @@ export function MissedRegistry() {
           </label>
         </div>
 
+        </details>
         {error && (
           <div className="state-banner error" role="alert">
             <CircleAlert size={18} />

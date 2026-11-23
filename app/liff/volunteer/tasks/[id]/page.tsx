@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { HeartPulse, MapPin, Phone, Stethoscope } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Modal } from "@/components/modal";
 import {
   VOLUNTEER_CHANNEL_LABELS,
   VOLUNTEER_CHANNELS,
@@ -179,16 +180,15 @@ export default function VolunteerTaskDetailPage() {
               </label>
             </div>
 
-            {confirmOpen && (
-              <div className="volunteer-protocol">
-                <strong>ยืนยันการบันทึกผล</strong>
+            <Modal open={confirmOpen} onClose={() => { if (!submitting) setConfirmOpen(false); }} title="ยืนยันการบันทึกผล" size="sm">
+              <div className="modal-confirm">
                 <p>ข้อมูลจะถูกบันทึกและไม่สามารถแก้ไขย้อนหลังได้</p>
                 <div style={{ display: "flex", gap: "var(--space-sm)", marginBlockStart: "var(--space-sm)" }}>
                   <button className="button secondary" onClick={() => setConfirmOpen(false)} disabled={submitting}>ยกเลิก</button>
                   <button className="button primary" onClick={() => void submitResult()} disabled={submitting || !resultCode}>{submitting ? "กำลังบันทึก…" : "ยืนยันบันทึก"}</button>
                 </div>
               </div>
-            )}
+            </Modal>
 
             <div className="volunteer-save-bar">
               <p>เลือกผลการติดตามแล้วกดบันทึก หรือส่งต่อพยาบาลหากต้องการความช่วยเหลือ</p>

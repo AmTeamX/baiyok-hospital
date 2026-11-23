@@ -61,17 +61,18 @@ export default function LiffContextPage() {
         )}
         {phase === "busy" && <p>กำลังสลับโหมด…</p>}
         {phase === "ready" && (
-          <section className="appointment-hero">
+          <section className="context-picker">
             <h2>คุณใช้งานในฐานะใด</h2>
             <p>ข้อมูลและสิทธิ์ของแต่ละโหมดจะถูกแยกออกจากกัน</p>
             <div style={{ display: "grid", gap: "var(--space-sm)", marginBlock: "var(--space-md)" }}>
               {contexts.map((context) => (
-                <button key={context.linkId} className="button patient-primary" onClick={() => choose(context)}>
+                <button key={context.linkId} className="context-choice" onClick={() => choose(context)}>
                   {context.role === "volunteer" ? <Stethoscope /> : <UserRound />}
-                  {context.role === "volunteer" ? "โหมด อสม." : "โหมดผู้ป่วย"}
+                  <span><strong>{context.role === "volunteer" ? "โหมด อสม." : "โหมดผู้ป่วย"}</strong><small>{context.role === "volunteer" ? "รับงานและบันทึกผลติดตาม" : "ดูวันนัดและติดต่อหน่วยบริการ"}</small></span><span aria-hidden="true">›</span>
                 </button>
               ))}
             </div>
+            {contexts.length === 0 && <div className="empty-state"><strong>ยังไม่มีบัญชีที่เชื่อมไว้</strong><a className="button primary" href="/liff/link">ผูกบัญชี LINE</a></div>}
           </section>
         )}
       </main>

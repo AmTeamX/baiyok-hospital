@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 type ModalProps = {
   open: boolean;
@@ -14,6 +14,8 @@ type ModalProps = {
 
 export function Modal({ open, title, description, onClose, children, size = "md" }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -23,9 +25,9 @@ export function Modal({ open, title, description, onClose, children, size = "md"
   }, [open]);
 
   return (
-    <dialog ref={ref} className={`modal modal-${size}`} onCancel={(event) => { event.preventDefault(); onClose(); }} onClose={onClose}>
+    <dialog ref={ref} className={`modal modal-${size}`} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onCancel={(event) => { event.preventDefault(); onClose(); }}>
       <div className="modal-head">
-        <div><h2>{title}</h2>{description && <p>{description}</p>}</div>
+        <div><h2 id={titleId}>{title}</h2>{description && <p id={descriptionId}>{description}</p>}</div>
         <button type="button" className="icon-button modal-close" onClick={onClose} aria-label="ปิด"><X size={19} /></button>
       </div>
       <div className="modal-body">{children}</div>

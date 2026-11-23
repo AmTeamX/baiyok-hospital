@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
+import { LoaderCircle, RotateCcw, TriangleAlert, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type NotificationItem = {
@@ -40,6 +40,9 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
+  const [query, setQuery] = useState("");
+  const visibleItems = items.filter((item) => (!filter || item.status === filter) && item.recipient_name.toLowerCase().includes(query.toLowerCase()));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,15 +92,16 @@ export default function NotificationsPage() {
 
       {error && <div className="demo-banner"><TriangleAlert size={18} /><span><strong>เกิดข้อผิดพลาด</strong> {error}</span></div>}
 
-      <section className="panel table-panel">
+      <section className="panel table-panel notifications-panel">
+        <div className="list-toolbar"><div className="search-field"><Search size={17} /><input aria-label="ค้นหาผู้รับ" placeholder="ค้นหาชื่อผู้รับ" value={query} onChange={(event) => setQuery(event.target.value)} /></div><label className="field"><span className="sr-only">สถานะการส่ง</span><select aria-label="สถานะการส่ง" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="">ทุกสถานะ · {items.length} รายการ</option>{Object.entries(statusLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>
         <div className="patient-table">
           <div className="table-row table-header"><span>ผู้รับ</span><span>ชนิด</span><span>สถานะ</span><span>ลองแล้ว</span><span>เวลาส่งล่าสุด</span><span /></div>
           {loading ? (
             <div className="empty-state"><strong>กำลังโหลด</strong><p>รอสักครู่…</p></div>
-          ) : items.length === 0 ? (
+          ) : visibleItems.length === 0 ? (
             <div className="empty-state"><strong>ยังไม่มีงานแจ้งเตือน</strong><p>เมื่อมอบหมายงานให้ อสม. รายการจะแสดงที่นี่</p></div>
           ) : (
-            items.map((item) => (
+            visibleItems.map((item) => (
               <div className="table-row" key={item.id}>
                 <span data-label="ผู้รับ"><strong>{item.recipient_name}</strong><small>{item.kind === "follow_up_assigned" ? "งานติดตามใหม่" : item.kind}</small></span>
                 <span data-label="ชนิด">{item.channel === "line" ? "LINE" : item.channel}</span>

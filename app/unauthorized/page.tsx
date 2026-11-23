@@ -1,5 +1,6 @@
 import Link from "next/link";
+import { StatusScreen } from "@/components/status-screen";
 
 export default function UnauthorizedPage() {
-  return <main className="login-page"><section className="login-card"><div className="login-copy"><p className="eyebrow">รพ.สต. สระโคล่</p><h1>ไม่มีสิทธิ์เข้าถึงหน้านี้</h1><p>บัญชีนี้ยังไม่ได้รับสิทธิ์สำหรับระบบเจ้าหน้าที่ กรุณาติดต่อผู้ดูแลระบบ</p></div><Link className="button primary wide" href="/login">กลับไปหน้าเข้าสู่ระบบ</Link></section></main>;
+  return <StatusScreen title="ไม่มีสิทธิ์เข้าถึงหน้านี้" description="บัญชีนี้ยังไม่ได้รับสิทธิ์สำหรับระบบเจ้าหน้าที่ กรุณาติดต่อผู้ดูแลระบบ หรือเข้าสู่ระบบด้วยบัญชีอื่น"><Link className="button primary" href="/login">กลับไปเข้าสู่ระบบ</Link></StatusScreen>;
 }

@@ -3,7 +3,7 @@ import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { verifyLiffIdToken } from "@/lib/line/liff";
 import { hashLinkToken, type LinkCodeRole } from "@/lib/line/link-code";
 import { consumeNonce, setSessionCookie } from "@/lib/line/session";
-import { getRichMenuIds, linkRichMenuToUser, selectRichMenuKind } from "@/lib/line/rich-menu";
+import { resolveRichMenuId, linkRichMenuToUser, selectRichMenuKind } from "@/lib/line/rich-menu";
 import { pushLineText } from "@/lib/line";
 
 type VerifyBody = {
@@ -128,24 +128,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "link_upsert_failed" }, { status: 500 });
   }
 
-  // Rich menu linking is best-effort and must never block the identity link.
+  let richMenuStatus = "not_configured";
   try {
-    const { data: links } = await supabase
+    const { data: links, error: rolesError } = await supabase
       .from("line_account_links")
       .select("role")
       .eq("line_account_id", account.id)
       .eq("status", "active");
-    const roles = (links ?? []).map((item) => item.role as "patient" | "volunteer");
+    if (rolesError) throw new Error("Unable to load linked roles");
+    const roles = [...new Set([resolvedRole, ...(links ?? []).map((item) => item.role as "patient" | "volunteer")])];
     const kind = selectRichMenuKind(roles);
-    const menuId = getRichMenuIds()[kind];
-    if (menuId && process.env.LINE_CHANNEL_ACCESS_TOKEN) {
-      const linked = await linkRichMenuToUser(lineUserId, menuId, { channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN });
+    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim();
+    const menuId = token ? await resolveRichMenuId(kind, { channelAccessToken: token }) : null;
+    if (menuId && token) {
+      const linked = await linkRichMenuToUser(lineUserId, menuId, { channelAccessToken: token });
+      richMenuStatus = linked ? "linked" : "failed";
       if (linked) {
         await supabase.from("line_accounts").update({ rich_menu_id: menuId, rich_menu_linked_at: now }).eq("id", account.id);
       }
     }
   } catch {
-    // Non-fatal; the identity link already succeeded.
+    richMenuStatus = "failed";
   }
 
   await supabase.from("audit_logs").insert({
@@ -169,5 +172,5 @@ export async function POST(request: Request) {
   }
 
   const sessionSet = await setSessionCookie({ lineAccountId: account.id, lineUserId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 });
-  return NextResponse.json({ ok: true, role: resolvedRole, session: sessionSet });
+  return NextResponse.json({ ok: true, role: resolvedRole, session: sessionSet, richMenuStatus });
 }

@@ -3,6 +3,7 @@
 import { LoaderCircle, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { PATIENT_REQUEST_STATUSES, PATIENT_REQUEST_STATUS_LABELS, type PatientRequestStatus } from "@/lib/patient";
+import { Modal } from "@/components/modal";
 
 type RequestItem = {
   id: string;
@@ -27,6 +28,7 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [selected, setSelected] = useState<RequestItem | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,6 +61,7 @@ export default function RequestsPage() {
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "อัปเดตไม่สำเร็จ");
       await load();
+      setSelected(null);
     } catch (transitionError) {
       setError(transitionError instanceof Error ? transitionError.message : "อัปเดตไม่สำเร็จ");
     } finally {
@@ -84,7 +87,8 @@ export default function RequestsPage() {
 
       {error && <div className="demo-banner"><TriangleAlert size={18} /><span><strong>เกิดข้อผิดพลาด</strong> {error}</span></div>}
 
-      <section className="panel table-panel">
+      <section className="panel table-panel requests-panel">
+        <div className="panel-head"><div><h2>รายการคำขอ</h2><p>{loading ? "กำลังโหลด…" : `${items.length} รายการ${status ? ` · ${PATIENT_REQUEST_STATUS_LABELS[status as PatientRequestStatus]}` : ""}`}</p></div><button className="button secondary" onClick={() => void load()} disabled={loading}>รีเฟรช</button></div>
         <div className="patient-table">
           <div className="table-row table-header"><span>ผู้ป่วย</span><span>เหตุผล</span><span>สถานะ</span><span>เวลา</span><span /></div>
           {loading ? (
@@ -98,21 +102,20 @@ export default function RequestsPage() {
                   <strong>{item.patientName ?? "—"}</strong>
                   <small>{item.typeLabel}</small>
                 </span>
-                <span data-label="เหตุผล"><strong>{item.reasonLabel}</strong>{item.note ? <small>{item.note}</small> : null}</span>
+                <span data-label="เหตุผล"><strong>{item.reasonLabel}</strong>{item.note ? <small className="truncate-note">{item.note}</small> : null}</span>
                 <span data-label="สถานะ"><i className={`status-dot status-req-${item.status}`}>{item.statusLabel}</i>{item.assigneeName ? <small>ผู้รับ: {item.assigneeName}</small> : null}</span>
                 <span data-label="เวลา">{thaiTime(item.createdAt)}</span>
                 <span data-label="">
-                  {item.status === "new" ? (
-                    <button className="button secondary" disabled={busy === item.id} onClick={() => void transition(item.id, "acknowledged")}>{busy === item.id ? <LoaderCircle className="spin" size={16} /> : null}รับเรื่อง</button>
-                  ) : item.status === "acknowledged" || item.status === "contacted" ? (
-                    <button className="button primary" disabled={busy === item.id} onClick={() => void transition(item.id, "resolved")}>{busy === item.id ? <LoaderCircle className="spin" size={16} /> : null}ปิดเรื่อง</button>
-                  ) : null}
+                  <button className="button secondary" onClick={() => setSelected(item)}>เปิดคำขอ</button>
                 </span>
               </div>
             ))
           )}
         </div>
       </section>
+      <Modal open={Boolean(selected)} onClose={() => { if (!busy) setSelected(null); }} title={selected?.typeLabel ?? "รายละเอียดคำขอ"} description={selected?.patientName ?? "ไม่ระบุผู้ป่วย"}>
+        {selected && <div className="request-detail"><i className={`status-dot status-req-${selected.status}`}>{selected.statusLabel}</i><dl className="detail-facts"><div><dt>เหตุผล</dt><dd>{selected.reasonLabel}</dd></div><div><dt>ส่งเมื่อ</dt><dd>{thaiTime(selected.createdAt)}</dd></div><div><dt>ผู้รับผิดชอบ</dt><dd>{selected.assigneeName ?? "ยังไม่รับเรื่อง"}</dd></div></dl><div className="request-note"><strong>ข้อความจากผู้ป่วย</strong><p>{selected.note || "ไม่มีรายละเอียดเพิ่มเติม"}</p></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-actions"><button className="button secondary" disabled={Boolean(busy)} onClick={() => setSelected(null)}>ปิด</button>{selected.status === "new" ? <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "acknowledged")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}รับเรื่อง</button> : selected.status === "acknowledged" || selected.status === "contacted" ? <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "resolved")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}ปิดเรื่อง</button> : null}</div></div>}
+      </Modal>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 export type RichMenuKind = "default" | "patient" | "volunteer" | "multi";
 
 export type RichMenuAction =
@@ -48,7 +50,12 @@ export function getRichMenuIds(): Record<RichMenuKind, string | null> {
 }
 
 function liffUrl(baseUrl: string, path: string) {
-  return `${baseUrl.replace(/\/$/, "")}${path}`;
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  if (!liffId) throw new Error("NEXT_PUBLIC_LIFF_ID is required for rich menu links");
+  const target = new URL(path, baseUrl);
+  const query = new URLSearchParams(target.search);
+  query.set("destination", target.pathname.replace(/^\/liff\//, ""));
+  return `https://liff.line.me/${liffId}?${query.toString()}`;
 }
 
 export function buildRichMenuSpecs(baseUrl: string): RichMenuSpec[] {
@@ -70,8 +77,8 @@ export function buildRichMenuSpecs(baseUrl: string): RichMenuSpec[] {
     {
       kind: "default",
       name: "srkolo-default",
-      chatBarText: "ติดต่อเจ้าหน้าที่",
-      areas: areas([{ type: "uri", uri: `https://line.me/R/oaMessage/${process.env.NEXT_PUBLIC_LINE_OA_BASIC_ID ?? ""}` }])
+      chatBarText: "ผูกบัญชี LINE",
+      areas: [{ bounds: box, action: { type: "uri", uri: liffUrl(baseUrl, "/liff/link") } }]
     },
     {
       kind: "patient",
@@ -81,7 +88,7 @@ export function buildRichMenuSpecs(baseUrl: string): RichMenuSpec[] {
         { type: "uri", uri: liffUrl(baseUrl, "/liff/appointments") },
         { type: "uri", uri: liffUrl(baseUrl, "/liff/education") },
         { type: "uri", uri: liffUrl(baseUrl, "/liff/problem") },
-        { type: "uri", uri: `https://line.me/R/oaMessage/${process.env.NEXT_PUBLIC_LINE_OA_BASIC_ID ?? ""}` }
+        { type: "uri", uri: liffUrl(baseUrl, "/liff/consult") }
       ])
     },
     {
@@ -91,7 +98,7 @@ export function buildRichMenuSpecs(baseUrl: string): RichMenuSpec[] {
       areas: areas([
         { type: "uri", uri: liffUrl(baseUrl, "/liff/volunteer") },
         { type: "uri", uri: liffUrl(baseUrl, "/liff/volunteer?filter=urgent") },
-        { type: "uri", uri: liffUrl(baseUrl, "/liff/volunteer?filter=pending") },
+        { type: "uri", uri: liffUrl(baseUrl, "/liff/volunteer?filter=new") },
         { type: "uri", uri: liffUrl(baseUrl, "/liff/volunteer/contact-nurse") }
       ])
     },
@@ -114,8 +121,8 @@ function authorized(token: string) {
 }
 
 /**
- * Idempotently provisions rich menus. Menus are identified by a stable `name`,
- * so a re-run reuses existing menus instead of creating duplicates.
+ * Includes the menu definition in its name so changes to actions are published,
+ * while identical definitions can be safely reused.
  */
 export async function provisionRichMenus(
   specs: RichMenuSpec[],
@@ -130,7 +137,8 @@ export async function provisionRichMenus(
   const report: ProvisionReport = { menus: [], defaultMenuId: null };
 
   for (const spec of specs) {
-    let id = byName.get(spec.name);
+    const name = richMenuVersionName(spec);
+    let id = byName.get(name);
     let created = false;
     let reused = false;
     if (id) {
@@ -142,7 +150,7 @@ export async function provisionRichMenus(
         body: JSON.stringify({
           size: { width: 2500, height: 1686 },
           selected: spec.kind === "default",
-          name: spec.name,
+          name,
           chatBarText: spec.chatBarText,
           areas: spec.areas
         })
@@ -157,6 +165,24 @@ export async function provisionRichMenus(
   }
 
   return report;
+}
+
+export function richMenuVersionName(spec: RichMenuSpec): string {
+  const hash = createHash("sha256").update(JSON.stringify({ chatBarText: spec.chatBarText, areas: spec.areas })).digest("hex").slice(0, 10);
+  return `${spec.name}-${hash}`;
+}
+
+export async function resolveRichMenuId(kind: RichMenuKind, deps: RichMenuDeps): Promise<string | null> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (baseUrl && process.env.NEXT_PUBLIC_LIFF_ID) {
+    const spec = buildRichMenuSpecs(baseUrl).find((item) => item.kind === kind)!;
+    const response = await (deps.fetchImpl ?? fetch)(`${LINE_API}/richmenu/list`, { headers: authorized(deps.channelAccessToken) });
+    if (!response.ok) throw new Error(`LINE list rich menus failed: ${response.status}`);
+    const body = await response.json() as { richmenus?: Array<{ richMenuId: string; name: string }> };
+    const menu = body.richmenus?.find((item) => item.name === richMenuVersionName(spec));
+    if (menu) return menu.richMenuId;
+  }
+  return getRichMenuIds()[kind];
 }
 
 export async function linkRichMenuToUser(

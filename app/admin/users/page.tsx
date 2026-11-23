@@ -4,6 +4,7 @@ import { LoaderCircle, Plus, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { LineLinkInvite } from "@/components/line-link-invite";
 import { Modal } from "@/components/modal";
+import { WorkspaceTabs } from "@/components/workspace-tabs";
 
 type Profile = { id: string; full_name: string; role: string; active: boolean; phone: string | null; line_linked: boolean; line_display_name: string | null };
 
@@ -22,6 +23,22 @@ export default function AdminUsersPage() {
   const [newPhone, setNewPhone] = useState("");
   const [creating, setCreating] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [view, setView] = useState<"volunteers" | "staff">("volunteers");
+  const [query, setQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuBusy, setMenuBusy] = useState(false);
+  const [menuMessage, setMenuMessage] = useState("");
+
+  async function publishMenus() {
+    setMenuBusy(true); setMenuMessage("");
+    try {
+      const response = await fetch("/api/admin/line/rich-menus", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "อัปเดตเมนูไม่สำเร็จ");
+      setMenuMessage(`อัปเดตเมนูแล้ว · สลับเมนูให้ ${body.sync?.linked ?? 0} บัญชี${body.sync?.failed ? ` · ไม่สำเร็จ ${body.sync.failed} บัญชี กรุณาลองอีกครั้ง` : ""}`);
+    } catch (error) { setMenuMessage(error instanceof Error ? error.message : "อัปเดตเมนูไม่สำเร็จ"); }
+    finally { setMenuBusy(false); }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,8 +116,9 @@ export default function AdminUsersPage() {
     }
   }
 
-  const staff = profiles.filter((profile) => profile.role !== "volunteer");
-  const volunteers = profiles.filter((profile) => profile.role === "volunteer");
+  const matchingProfiles = profiles.filter((profile) => `${profile.full_name} ${profile.phone ?? ""}`.includes(query.trim()));
+  const staff = matchingProfiles.filter((profile) => profile.role !== "volunteer");
+  const volunteers = matchingProfiles.filter((profile) => profile.role === "volunteer");
 
   function renderRow(profile: Profile, withInvite: boolean) {
     return (
@@ -144,11 +162,13 @@ export default function AdminUsersPage() {
           <h1>เจ้าหน้าที่และ อสม.</h1>
           <p>ดูรายชื่อ เปิด/ระงับ อสม. และสร้างรหัสเชื่อม LINE ให้ อสม. (รหัสใช้ครั้งเดียว หมดอายุ 15 นาที)</p>
         </div>
+        <button className="button secondary" onClick={() => setMenuOpen(true)}>อัปเดตเมนู LINE</button>
       </div>
 
       {error && <div className="demo-banner"><TriangleAlert size={18} /><span><strong>เกิดข้อผิดพลาด</strong> {error}</span></div>}
 
-      <section className="panel table-panel">
+      <div className="team-toolbar"><WorkspaceTabs value={view} onChange={setView} label="ประเภทบุคลากร" items={[{ value: "volunteers", label: "อสม." }, { value: "staff", label: "เจ้าหน้าที่" }]} /><input aria-label="ค้นหาบุคลากร" placeholder="ค้นหาชื่อหรือเบอร์โทร" value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+      <section className="panel table-panel team-panel" hidden={view !== "staff"}>
         <div className="panel-head"><div><h2>เจ้าหน้าที่</h2></div></div>
         <div className="patient-table">
           {loading ? (
@@ -161,7 +181,7 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
-      <section className="panel table-panel" style={{ marginBlockStart: "var(--space-lg)" }}>
+      <section className="panel table-panel team-panel" hidden={view !== "volunteers"}>
         <div className="panel-head"><div><h2>อสม. ({volunteers.length})</h2><p>สร้างรหัสเชื่อม LINE เพื่อให้ อสม. ผูกบัญชีจากแอป LINE</p></div><button className="button primary" onClick={() => setCreateOpen(true)}><Plus size={17} />เพิ่ม อสม.</button></div>
 
         <div className="patient-table">
@@ -175,6 +195,10 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
+      <Modal open={menuOpen} onClose={() => { if (!menuBusy) setMenuOpen(false); }} title="อัปเดตเมนู LINE" description="เผยแพร่เมนูที่เปิดด้วย LIFF และสลับเมนูให้บัญชีที่เชื่อมไว้ตามบทบาท" size="sm">
+        {menuMessage && <div className="state-banner" role="status"><span>{menuMessage}</span></div>}
+        <div className="modal-actions"><button className="button secondary" onClick={() => setMenuOpen(false)} disabled={menuBusy}>ปิด</button><button className="button primary" onClick={() => void publishMenus()} disabled={menuBusy}>{menuBusy ? "กำลังอัปเดต…" : "เผยแพร่และอัปเดต"}</button></div>
+      </Modal>
       <Modal open={createOpen} onClose={() => { if (!creating) setCreateOpen(false); }} title="เพิ่ม อสม." description="เพิ่มข้อมูลพื้นฐานก่อนสร้างรหัสเชื่อมบัญชี LINE" size="sm">
         <form onSubmit={createVolunteer} className="case-form">
           {error && <div className="state-banner error" role="alert"><span>{error}</span></div>}

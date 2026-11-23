@@ -19,6 +19,8 @@ export default function LiffVolunteerPage() {
   const [active, setActive] = useState("new");
 
   useEffect(() => {
+    const filter = new URLSearchParams(window.location.search).get("filter");
+    if (filter && tabs.some((tab) => tab.key === filter)) setActive(filter);
     void (async () => {
       try {
         const response = await fetch("/api/volunteer/me");

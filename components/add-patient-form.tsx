@@ -2,6 +2,7 @@
 
 import { LoaderCircle, Save, UserPlus } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 export function AddPatientForm() {
   const [hn, setHn] = useState("");
@@ -45,6 +46,7 @@ export function AddPatientForm() {
   }
 
   function reset() {
+    setHn(""); setFullName(""); setPhone(""); setVillage(""); setAppointmentDate(""); setAppointmentTime("08:00"); setClinic("คลินิกความดัน"); setStatus("scheduled");
     setPhase("idle");
     setMessage("");
   }
@@ -60,19 +62,22 @@ export function AddPatientForm() {
   }
 
   return (
-    <form onSubmit={submit} className="case-form">
+    <form onSubmit={submit} className="case-form intake-form">
       {phase === "error" && <div className="state-banner error" role="alert"><span>{message}</span></div>}
 
+      <fieldset className="intake-section"><legend><span>01</span>ข้อมูลผู้ป่วย</legend><p>ใช้ HN ให้ตรงกับทะเบียนหน่วยบริการ</p>
       <div className="two-fields">
-        <label className="field"><span>HN</span><input value={hn} onChange={(event) => setHn(event.target.value)} required placeholder="เลขนำหน้า 0 จะถูกรักษาไว้" /></label>
+        <label className="field"><span>HN *</span><input value={hn} onChange={(event) => setHn(event.target.value)} required placeholder="เช่น 0012345" /></label>
         <label className="field"><span>ชื่อ-นามสกุล</span><input value={fullName} onChange={(event) => setFullName(event.target.value)} required /></label>
       </div>
       <div className="two-fields">
         <label className="field"><span>เบอร์โทร</span><input value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
         <label className="field"><span>หมู่บ้าน</span><input value={village} onChange={(event) => setVillage(event.target.value)} /></label>
       </div>
+      </fieldset>
+      <fieldset className="intake-section"><legend><span>02</span>ข้อมูลนัด</legend><p>ตรวจวัน เวลา และสถานะก่อนบันทึก</p>
       <div className="two-fields">
-        <label className="field"><span>วันที่นัด</span><input type="date" value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} required /></label>
+        <label className="field"><span>วันที่นัด *</span><input type="date" value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} required /></label>
         <label className="field"><span>เวลานัด</span><input type="time" value={appointmentTime} onChange={(event) => setAppointmentTime(event.target.value)} required /></label>
       </div>
       <label className="field"><span>คลินิก</span><input value={clinic} onChange={(event) => setClinic(event.target.value)} required /></label>
@@ -85,7 +90,8 @@ export function AddPatientForm() {
       </label>
       {status === "missed" && <p className="volunteer-hint">จะสร้างเป็นผู้ขาดนัดพร้อมรายการติดตามให้ทันที ปรากฏในทะเบียนผู้ขาดนัด</p>}
 
-      <button className="button primary" disabled={phase === "saving"}>{phase === "saving" ? <><LoaderCircle className="spin" size={18} />กำลังบันทึก</> : <><Save size={18} />บันทึกผู้ป่วยและนัด</>}</button>
+      </fieldset>
+      <div className="form-action-bar"><Link className="button secondary" href="/patients">ยกเลิก</Link><button className="button primary" disabled={phase === "saving"}>{phase === "saving" ? <><LoaderCircle className="spin" size={18} />กำลังบันทึก</> : <><Save size={18} />บันทึกผู้ป่วยและนัด</>}</button></div>
     </form>
   );
 }

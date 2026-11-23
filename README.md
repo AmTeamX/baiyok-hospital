@@ -27,12 +27,12 @@ npm run dev
 
 ## ตั้งค่า LINE OA
 
-1. สร้าง Messaging API channel และ LIFF app
+1. สร้าง Messaging API channel และ LIFF app โดยตั้ง Endpoint URL เป็น `https://<โดเมนแอป>/liff/link` ตัวกลางนี้เรียก `liff.init()` ก่อนอ่านพารามิเตอร์และเปิดหน้าปลายทางจาก `destination` ที่อนุญาตเท่านั้น
 2. ตั้ง webhook เป็น `https://<โดเมน>/api/line/webhook`
 3. เติม `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `NEXT_PUBLIC_LIFF_ID`, `NEXT_PUBLIC_LINE_OA_BASIC_ID` และสุ่ม `CHECKIN_SIGNING_SECRET` สำหรับลงลายเซ็น QR
 4. เปิด webhook redelivery และตั้ง Rich Menu ให้ลิงก์ไปหน้าวันนัด สื่อสุขภาพ แจ้งปัญหา และขอคำปรึกษา
 
-ภาพ Rich Menu และรูปโปรไฟล์อยู่ใน `public/rich-menu/` ใช้ endpoint เจ้าหน้าที่ `POST /api/admin/line/rich-menus` เพื่อสร้าง/อัปโหลดเมนูแบบ idempotent แล้วนำ Rich Menu ID ที่ได้ไปใส่ `LINE_RICH_MENU_*_ID` ใน environment ก่อนทดสอบการ link รายบุคคล
+ภาพ Rich Menu และรูปโปรไฟล์อยู่ใน `public/rich-menu/` หลัง deploy กด **อัปเดตเมนู LINE** ในหน้าทีม หรือใช้ endpoint เจ้าหน้าที่ `POST /api/admin/line/rich-menus` เพื่อสร้าง/อัปโหลดและสลับเมนูให้บัญชีเดิมตามบทบาท ลิงก์ทุกปุ่มใช้ `https://liff.line.me/<LIFF ID>?destination=...` ระบบใช้ชื่อเวอร์ชันตามเนื้อหาเมนูจึงใช้เมนูเดิมซ้ำเฉพาะเมื่อ actions ตรงกัน และค้นหา ID ของเวอร์ชันปัจจุบันให้อัตโนมัติ (`LINE_RICH_MENU_*_ID` ยังใช้เป็น fallback ได้) หลังผูกบัญชี API ส่ง `richMenuStatus` เพื่อบอกว่าสลับเมนูสำเร็จหรือยัง
 
 Webhook ตรวจ `x-line-signature` ทุกครั้งและเก็บเฉพาะ metadata ที่จำเป็นเพื่อกัน event ซ้ำ ส่วน Vercel Cron เรียก `/api/jobs/reminders` เวลา 08:00 น. ประเทศไทยทุกวัน เพื่อส่งข้อความเตือนนัดวันถัดไปแบบไม่ส่งซ้ำ และเรียก `/api/jobs/mark-missed` รายชั่วโมงเพื่อตัดนัดที่เลยกำหนดของหน่วยบริการเป็น `missed` พร้อมสร้าง follow-up เพียงรายการเดียว (รันซ้ำได้โดยไม่สร้างซ้ำ)
 

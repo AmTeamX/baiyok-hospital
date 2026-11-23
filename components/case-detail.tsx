@@ -5,6 +5,9 @@ import { CircleAlert, Clock3, LoaderCircle, RotateCcw, Save, UserRoundCheck } fr
 import { type FollowUpDetail } from "@/lib/follow-up";
 import { MISSED_PRIORITIES, MISSED_STATUSES, type MissedPriority, type MissedStatus } from "@/lib/missed";
 import { LineLinkInvite } from "@/components/line-link-invite";
+import { WorkspaceTabs } from "@/components/workspace-tabs";
+import Link from "next/link";
+import { Modal } from "@/components/modal";
 
 type DetailResponse = { ok: boolean; followUp?: FollowUpDetail; error?: string; mode?: "demo" | "database" };
 
@@ -30,6 +33,7 @@ function daysLate(appointmentAt: string) {
 }
 
 export function CaseDetail({ id }: { id: string }) {
+  const [view, setView] = useState<"overview" | "record" | "activity">("overview");
   const [detail, setDetail] = useState<FollowUpDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +52,8 @@ export function CaseDetail({ id }: { id: string }) {
   const [activityType, setActivityType] = useState("");
   const [activityNote, setActivityNote] = useState("");
   const [adding, setAdding] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityError, setActivityError] = useState("");
 
   const [volunteers, setVolunteers] = useState<Array<{ id: string; full_name: string; active: boolean }>>([]);
   const [selectedVolunteer, setSelectedVolunteer] = useState("");
@@ -125,6 +131,7 @@ export function CaseDetail({ id }: { id: string }) {
     event.preventDefault();
     if (!detail || !activityType.trim()) return;
     setAdding(true);
+    setActivityError("");
     try {
       const response = await fetch(`/api/follow-ups/${detail.id}/activities`, {
         method: "POST",
@@ -134,8 +141,11 @@ export function CaseDetail({ id }: { id: string }) {
       if (response.ok) {
         setActivityType("");
         setActivityNote("");
+        setActivityOpen(false);
         await load();
-      }
+      } else setActivityError("เพิ่มกิจกรรมไม่สำเร็จ กรุณาลองใหม่");
+    } catch {
+      setActivityError("เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่");
     } finally {
       setAdding(false);
     }
@@ -194,8 +204,11 @@ export function CaseDetail({ id }: { id: string }) {
       {saved && <div className="state-banner success" role="status"><UserRoundCheck size={18} /><span>บันทึกการติดตามแล้ว</span></div>}
       {saveError && <div className="state-banner error" role="alert"><CircleAlert size={18} /><span>{saveError}</span></div>}
 
+      <Link className="text-link" href="/patients/missed">← กลับทะเบียนผู้ขาดนัด</Link>
+      <WorkspaceTabs value={view} onChange={setView} label="ส่วนงานติดตาม" items={[{ value: "overview", label: "ภาพรวมเคส" }, { value: "record", label: "บันทึกผลติดตาม" }, { value: "activity", label: "ประวัติกิจกรรม" }]} />
+      <div className="case-workspace" hidden={view === "activity"}>
       <div className="case-grid">
-        <section className="panel case-summary">
+        <section className="panel case-summary" hidden={view !== "overview"}>
           <h2>ข้อมูลนัดและสาเหตุ</h2>
           <dl>
             <div><dt>วันนัดเดิม</dt><dd>{thaiDateTime(detail.appointment.appointmentAt)}</dd></div>
@@ -207,7 +220,7 @@ export function CaseDetail({ id }: { id: string }) {
           </dl>
         </section>
 
-        <section className="panel case-edit">
+        <section className="panel case-edit" hidden={view !== "record"}>
           <h2>บันทึก/แก้ไขผลติดตาม</h2>
           <form onSubmit={save} className="case-form">
             <label className="field"><span>สถานะ</span>
@@ -229,7 +242,7 @@ export function CaseDetail({ id }: { id: string }) {
         </section>
       </div>
 
-      <section className="panel case-summary" style={{ marginBlockStart: "var(--space-lg)" }}>
+      <section className="panel case-summary" hidden={view !== "overview"} style={{ marginBlockStart: "var(--space-lg)" }}>
         <h2>มอบหมาย อสม.</h2>
         <p>ผู้รับผิดชอบปัจจุบัน: {detail.assigneeName ?? "ยังไม่มอบหมาย"}</p>
         <div className="case-form">
@@ -244,15 +257,17 @@ export function CaseDetail({ id }: { id: string }) {
         {assignMessage && <p className="form-error" role="status">{assignMessage}</p>}
       </section>
 
-      <section className="panel case-summary" style={{ marginBlockStart: "var(--space-lg)" }}>
+      <section className="panel case-summary" hidden={view !== "overview"} style={{ marginBlockStart: "var(--space-lg)" }}>
         <h2>เชื่อมบัญชี LINE</h2>
         <p>สร้าง QR ให้ผู้ป่วยสแกนในแอป LINE เพื่อผูกบัญชี — ใช้ได้ครั้งเดียว หมดอายุ 15 นาที</p>
         <LineLinkInvite targetType="patient" targetId={detail.patient.id} role="patient" label="สร้างรหัสเชื่อม LINE" />
       </section>
 
-      <section className="panel timeline-panel">
+      </div>
+      <section className="panel timeline-panel" hidden={view !== "activity"}>
         <div className="panel-head">
           <div><h2>เส้นเวลากิจกรรม</h2><p>บันทึกแบบต่อท้าย ไม่สามารถแก้ไขหรือลบรายการเดิมได้</p></div>
+          <button className="button primary" onClick={() => setActivityOpen(true)}>เพิ่มกิจกรรม</button>
         </div>
         {detail.activities.length === 0 ? (
           <div className="state-banner empty"><Clock3 size={18} /><span>ยังไม่มีกิจกรรมที่บันทึก</span></div>
@@ -266,12 +281,15 @@ export function CaseDetail({ id }: { id: string }) {
             ))}
           </ol>
         )}
-        <form onSubmit={addActivity} className="activity-form">
+      </section>
+      <Modal open={activityOpen} onClose={() => { if (!adding) setActivityOpen(false); }} title="เพิ่มกิจกรรมติดตาม" description="บันทึกการติดต่อและสิ่งที่ได้ดำเนินการ" size="sm">
+        <form onSubmit={addActivity} className="case-form">
+          {activityError && <p className="form-error" role="alert">{activityError}</p>}
           <label className="field"><span>กิจกรรมใหม่</span><input value={activityType} onChange={(event) => setActivityType(event.target.value)} placeholder="เช่น โทรศัพท์ติดตาม, ให้คำปรึกษาเรื่องยา" required /></label>
           <label className="field"><span>บันทึกเพิ่มเติม</span><input value={activityNote} onChange={(event) => setActivityNote(event.target.value)} placeholder="รายละเอียด (ไม่บังคับ)" /></label>
           <button className={`button secondary ${adding ? "loading" : ""}`} disabled={adding}>{adding ? <LoaderCircle className="spin" size={18} /> : "เพิ่มกิจกรรม"}</button>
         </form>
-      </section>
+      </Modal>
     </div>
   );
 }

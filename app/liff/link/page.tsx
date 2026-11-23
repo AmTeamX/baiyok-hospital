@@ -11,16 +11,33 @@ export default function LiffLinkPage() {
   const [message, setMessage] = useState("");
   const [code, setCode] = useState("");
   const [typedCode, setTypedCode] = useState("");
+  const [menuPending, setMenuPending] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlCode = params.get("code")?.trim();
-    if (urlCode) {
-      setCode(urlCode);
-      setPhase("consent");
-    } else {
-      setPhase("entry");
-    }
+    void (async () => {
+      try {
+        let params = new URLSearchParams(window.location.search);
+        if (params.has("liff.state") || params.has("destination")) {
+          const init = await fetch("/api/line/liff/init").then((response) => response.json());
+          if (!init.ok) throw new Error("ไม่สามารถเปิดเมนู LINE ได้ กรุณาลองใหม่");
+          await getLiffIdToken(init.liffId);
+          params = new URLSearchParams(window.location.search);
+          const destination = params.get("destination");
+          const allowed = ["appointments", "education", "problem", "consult", "volunteer", "volunteer/contact-nurse", "context"];
+          if (destination && allowed.includes(destination)) {
+            params.delete("destination"); params.delete("liff.state");
+            window.location.replace(`/liff/${destination}${params.size ? `?${params}` : ""}`);
+            return;
+          }
+        }
+        const urlCode = params.get("code")?.trim();
+        if (urlCode) { setCode(urlCode); setPhase("consent"); }
+        else setPhase("entry");
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "เปิดเมนูไม่สำเร็จ");
+        setPhase("error");
+      }
+    })();
   }, []);
 
   async function submitCode(event: React.FormEvent<HTMLFormElement>) {
@@ -54,6 +71,7 @@ export default function LiffLinkPage() {
         throw new Error(reason);
       }
 
+      setMenuPending(body.richMenuStatus !== "linked");
       setPhase("success");
     } catch (error) {
       setPhase("error");
@@ -108,6 +126,7 @@ export default function LiffLinkPage() {
           <section className="appointment-hero">
             <h2>ผูกบัญชีสำเร็จ</h2>
             <p>คุณสามารถกลับไปที่แอป LINE เพื่อใช้งานเมนูได้เลย</p>
+            {menuPending && <p role="status">บัญชีเชื่อมแล้ว แต่เมนู LINE ยังอัปเดตไม่สำเร็จ กรุณาแจ้งเจ้าหน้าที่ ระหว่างนี้กดเลือกโหมดด้านล่างได้</p>}
             <a className="button patient-primary" href="/liff/context">เลือกโหมดการใช้งาน</a>
           </section>
         )}

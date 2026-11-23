@@ -3,6 +3,7 @@ import Script from "next/script";
 import "@fontsource-variable/noto-sans-thai";
 import "../tokens.css";
 import "./globals.css";
+import "./workspace.css";
 import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {

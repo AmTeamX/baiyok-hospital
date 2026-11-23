@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildRichMenuSpecs, provisionRichMenus, selectRichMenuKind } from "@/lib/line/rich-menu";
+import { buildRichMenuSpecs, provisionRichMenus, selectRichMenuKind, richMenuVersionName } from "@/lib/line/rich-menu";
+
+vi.stubEnv("NEXT_PUBLIC_LIFF_ID", "123-app");
 
 describe("selectRichMenuKind", () => {
   it("maps a single patient role", () => {
@@ -22,11 +24,17 @@ describe("buildRichMenuSpecs", () => {
     expect(specs.map((spec) => spec.name)).toEqual(["srkolo-default", "srkolo-patient", "srkolo-volunteer", "srkolo-multi"]);
     for (const spec of specs) {
       if (spec.kind !== "default") expect(spec.areas).toHaveLength(4);
+      for (const area of spec.areas) expect(area.action).toMatchObject({ type: "uri", uri: expect.stringMatching(/^https:\/\/liff.line.me\/123-app\?/) });
     }
   });
 });
 
 describe("provisionRichMenus", () => {
+  it("changes the version when the LIFF destination changes", () => {
+    const spec = buildRichMenuSpecs("https://app.example")[1];
+    const updated = { ...spec, areas: spec.areas.map((area, index) => index === 0 ? { ...area, action: { type: "uri" as const, uri: "https://liff.line.me/123-app?destination=context" } } : area) };
+    expect(richMenuVersionName(updated)).not.toBe(richMenuVersionName(spec));
+  });
   function existingList(menus: Array<{ richMenuId: string; name?: string }>) {
     return { richmenus: menus };
   }
@@ -36,7 +44,7 @@ describe("provisionRichMenus", () => {
     const fetchImpl = vi.fn(async (url: RequestInfo | URL) => {
       const path = String(url).replace("https://api.line.me/v2/bot", "");
       if (path === "/richmenu/list") {
-        return new Response(JSON.stringify(existingList(specs.map((spec) => ({ richMenuId: `existing-${spec.kind}`, name: spec.name })))), { status: 200 });
+        return new Response(JSON.stringify(existingList(specs.map((spec) => ({ richMenuId: `existing-${spec.kind}`, name: richMenuVersionName(spec) })))), { status: 200 });
       }
       throw new Error(`unexpected call: ${path}`);
     });
