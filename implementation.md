@@ -930,7 +930,7 @@ tests/
 ลำดับแนะนำเพื่อให้ได้ผลลัพธ์เร็วและลดความเสี่ยง:
 
 - [x] STEP 0 — เตรียม test infrastructure, schema validation และ baseline
-- [ ] STEP 1 — สร้าง production schema และ RLS
+- [~] STEP 1 — สร้าง production schema และ RLS
 - [ ] STEP 2 — แก้ import ให้แยกนัด/ผลบริการและมี preview
 - [ ] STEP 3 — ทำ `mark-missed` Cron และทะเบียนผู้ขาดนัด
 - [ ] STEP 4 — ทำ case timeline, assignment และ notification outbox
@@ -1056,16 +1056,16 @@ Acceptance:
 
 ### 23.4 STEP 1 — Production Database และ RLS
 
-#### [ ] DB-01 — Core production workflow migration
+#### [~] DB-01 — Core production workflow migration
 
 Dependencies: FND-01
 
-- [ ] สร้าง `002_production_workflows.sql`
-- [ ] เพิ่ม/ปรับ service units, profiles, patients, appointments, follow-ups
-- [ ] เพิ่ม import batches/errors, notification outbox และ audit logs
-- [ ] เพิ่ม constraints, indexes, timestamps และ updated-at triggers
-- [ ] เพิ่ม unique constraint ป้องกัน active follow-up ซ้ำต่อ appointment
-- [ ] ใส่ comment อธิบาย enum/status สำคัญ
+- [x] สร้าง `002_production_workflows.sql`
+- [x] เพิ่ม/ปรับ service units, profiles, patients, appointments, follow-ups
+- [x] เพิ่ม import batches/errors, notification outbox และ audit logs
+- [x] เพิ่ม constraints, indexes, timestamps และ updated-at triggers
+- [x] เพิ่ม unique constraint ป้องกัน active follow-up ซ้ำต่อ appointment
+- [x] ใส่ comment อธิบาย enum/status สำคัญ
 
 Acceptance:
 
@@ -1073,36 +1073,38 @@ Acceptance:
 - รันซ้ำตาม workflow ของ Supabase reset ได้
 - constraints ปฏิเสธสถานะหรือ reference ที่ไม่ถูกต้อง
 
-#### [ ] DB-02 — RLS และ authorization helpers
+#### [~] DB-02 — RLS และ authorization helpers
 
 Dependencies: DB-01
 
-- [ ] สร้าง `003_rls_policies.sql`
-- [ ] เพิ่ม helper functions สำหรับ role/service unit
-- [ ] Staff อ่านตามหน่วยบริการ
-- [ ] Volunteer อ่านเฉพาะ assignment ของตน
-- [ ] Patient/LIFF ไม่เข้าตารางสุขภาพโดยตรง
-- [ ] notification, webhook และ audit tables เป็น service-role only
-- [ ] เพิ่ม deny-by-default tests
+- [x] สร้าง `003_rls_policies.sql`
+- [x] เพิ่ม helper functions สำหรับ role/service unit
+- [x] Staff อ่านตามหน่วยบริการ
+- [x] Volunteer อ่านเฉพาะ assignment ของตน
+- [x] Patient/LIFF ไม่เข้าตารางสุขภาพโดยตรง
+- [x] notification, webhook และ audit tables เป็น service-role only
+- [x] เพิ่ม deny-by-default tests
 
 Acceptance:
 
 - RLS test ครบ admin, nurse, volunteer, anonymous และ cross-user
 - การเดา UUID ไม่ทำให้เห็นข้อมูลนอกสิทธิ์
 
-#### [ ] DB-03 — Generated types และ seed data
+#### [~] DB-03 — Generated types และ seed data
 
 Dependencies: DB-01, DB-02
 
-- [ ] สร้าง/อัปเดต Supabase TypeScript types
-- [ ] seed รพ.สต. สระโคล่, staff, อสม. และข้อมูลสังเคราะห์
-- [ ] ห้ามใช้ข้อมูลผู้ป่วยจริงใน seed
-- [ ] เพิ่มคำสั่ง reset/local setup ใน README
+- [x] สร้าง/อัปเดต Supabase TypeScript types
+- [x] seed รพ.สต. สระโคล่, staff, อสม. และข้อมูลสังเคราะห์
+- [x] ห้ามใช้ข้อมูลผู้ป่วยจริงใน seed
+- [x] เพิ่มคำสั่ง reset/local setup ใน README
 
 Acceptance:
 
 - local reset แล้วเปิดหน้าหลักด้วยข้อมูลสังเคราะห์ได้
 - TypeScript ไม่ใช้ `any` เพื่อหลบ schema mismatch
+
+สถานะตรวจ STEP 1: สร้าง migration, RLS policies, pgTAP test, type contract และ seed แล้ว; `npm run lint`, `npm test` และ `npm run build` ผ่าน แต่ยังรัน migration/reset/RLS test กับ Supabase local จริงไม่ได้เพราะเครื่องนี้ยังไม่มี Supabase CLI หรือ database container จึงยังไม่ติ๊ก `[x]` จนกว่าจะมี environment สำหรับตรวจ SQL จริง
 
 ### 23.5 STEP 2 — Import นัดและผลบริการ
 
