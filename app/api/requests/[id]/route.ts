@@ -19,11 +19,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   if (!uuidPattern.test(id)) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
 
-  const body = (await request.json().catch(() => ({}))) as { status?: unknown; assignedTo?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { status?: unknown; assignedTo?: unknown; staffResponse?: unknown };
   if (!isValidPatientRequestStatus(body.status)) {
     return NextResponse.json({ ok: false, error: "invalid_status" }, { status: 422 });
   }
   const assignedTo = typeof body.assignedTo === "string" && uuidPattern.test(body.assignedTo) ? body.assignedTo : null;
+  const staffResponse = typeof body.staffResponse === "string" ? body.staffResponse.trim().slice(0, 500) : null;
 
   if (!hasSupabaseAdmin() || !staff.userId) {
     return NextResponse.json({ ok: true, mode: "demo", request_id: id, status: body.status });
@@ -52,6 +53,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .eq("id", id)
     .maybeSingle();
   if (requestRow) {
+    if (staffResponse) {
+      await supabase.from("patient_requests").update({ staff_response: staffResponse }).eq("id", id);
+    }
     const { data: link } = await supabase
       .from("line_account_links")
       .select("line_account_id")

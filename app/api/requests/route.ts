@@ -41,6 +41,7 @@ export async function GET(request: Request) {
     appointmentAt: row.appointment_at ?? null,
     appointmentClinic: row.appointment_clinic ?? null,
     patientId: row.patient_id ?? null,
+    staffResponse: row.staff_response ?? null,
     patientName: row.patient_name ?? null,
     createdAt: row.created_at ?? null,
     acknowledgedAt: row.acknowledged_at ?? null,

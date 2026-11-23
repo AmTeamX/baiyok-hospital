@@ -88,12 +88,16 @@ export async function dispatchNotifications(options: { notificationId?: string; 
     .map((item: { patient_request_id: string | null }) => item.patient_request_id)
     .filter(Boolean))] as string[];
   const patientRequestStatusMap = new Map<string, string>();
+  const patientRequestResponseMap = new Map<string, string>();
   if (patientRequestIds.length) {
     const { data: requestRows } = await supabase
       .from("patient_requests")
-      .select("id, status")
+      .select("id, status, staff_response")
       .in("id", patientRequestIds);
-    for (const row of requestRows ?? []) patientRequestStatusMap.set(row.id, row.status);
+    for (const row of requestRows ?? []) {
+      patientRequestStatusMap.set(row.id, row.status);
+      if (row.staff_response) patientRequestResponseMap.set(row.id, row.staff_response);
+    }
   }
 
   const appointmentIds = [...new Set(candidates
@@ -161,6 +165,7 @@ export async function dispatchNotifications(options: { notificationId?: string; 
             const flex = buildPatientStatusFlex({
               kind: candidate.kind,
               status: candidate.patient_request_id ? patientRequestStatusMap.get(candidate.patient_request_id) : undefined,
+              staffResponse: candidate.patient_request_id ? patientRequestResponseMap.get(candidate.patient_request_id) : undefined,
               link: patientAppointmentDeepLink(candidate.appointment_id ?? "", undefined),
               appointmentAt: appointment?.appointment_at,
               clinic: appointment?.clinic

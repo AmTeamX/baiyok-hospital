@@ -68,6 +68,7 @@ export function buildPatientStatusFlex(options: {
   link: string;
   appointmentAt?: string;
   clinic?: string;
+  staffResponse?: string;
 }) {
   const isCancelled = options.kind === "appointment_cancelled";
   const isRescheduled = options.kind === "appointment_rescheduled";
@@ -116,6 +117,7 @@ export function buildPatientStatusFlex(options: {
       paddingAll: "18px",
       contents: [
         { type: "text", text: detail, size: "md", weight: "bold", color: "#24332F", wrap: true },
+        ...(options.staffResponse ? [{ type: "text", text: `ข้อความจากเจ้าหน้าที่: ${options.staffResponse}`, size: "sm", color: "#66736F", margin: "md", wrap: true }] : []),
         ...(options.clinic ? [{ type: "text", text: options.clinic, size: "sm", color: "#66736F", margin: "md", wrap: true }] : [])
       ]
     },

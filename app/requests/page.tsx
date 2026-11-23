@@ -20,11 +20,19 @@ type RequestItem = {
   appointmentAt: string | null;
   appointmentClinic: string | null;
   patientId: string | null;
+  staffResponse: string | null;
 };
 
 function thaiTime(value: string | null) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("th-TH", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(new Date(value));
+}
+
+function toDateTimeLocal(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  const shifted = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  return shifted.toISOString().slice(0, 16);
 }
 
 export default function RequestsPage() {
@@ -34,6 +42,16 @@ export default function RequestsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<RequestItem | null>(null);
+  const [appointmentAt, setAppointmentAt] = useState("");
+  const [appointmentClinic, setAppointmentClinic] = useState("");
+  const [staffResponse, setStaffResponse] = useState("");
+
+  function openRequest(item: RequestItem) {
+    setSelected(item);
+    setAppointmentAt(toDateTimeLocal(item.appointmentAt));
+    setAppointmentClinic(item.appointmentClinic ?? "");
+    setStaffResponse(item.staffResponse ?? "");
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,7 +79,7 @@ export default function RequestsPage() {
       const response = await fetch(`/api/requests/${id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ status: next })
+        body: JSON.stringify({ status: next, staffResponse: staffResponse.trim() })
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "อัปเดตไม่สำเร็จ");
@@ -69,6 +87,37 @@ export default function RequestsPage() {
       setSelected(null);
     } catch (transitionError) {
       setError(transitionError instanceof Error ? transitionError.message : "อัปเดตไม่สำเร็จ");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function updateAppointment(action: "reschedule" | "cancel") {
+    if (!selected?.appointmentId) return;
+    setBusy(selected.id);
+    setError(null);
+    try {
+      let appointmentAtIso: string | null = null;
+      if (action === "reschedule") {
+        if (!appointmentAt || !appointmentClinic.trim()) throw new Error("กรุณากรอกวัน เวลา และคลินิกใหม่");
+        const date = new Date(`${appointmentAt}:00+07:00`);
+        if (Number.isNaN(date.getTime())) throw new Error("กรุณากรอกวันและเวลานัดให้ถูกต้อง");
+        appointmentAtIso = date.toISOString();
+      }
+      const response = await fetch(`/api/appointments/${selected.appointmentId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: action === "cancel"
+          ? JSON.stringify({ status: "cancelled" })
+          : JSON.stringify({ appointmentAt: appointmentAtIso, clinic: appointmentClinic.trim(), status: "scheduled" })
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "แก้ไขนัดไม่สำเร็จ");
+
+      await transition(selected.id, "resolved");
+      await load();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "แก้ไขนัดไม่สำเร็จ");
     } finally {
       setBusy(null);
     }
@@ -111,7 +160,7 @@ export default function RequestsPage() {
                 <span data-label="สถานะ"><i className={`status-dot status-req-${item.status}`}>{item.statusLabel}</i>{item.assigneeName ? <small>ผู้รับ: {item.assigneeName}</small> : null}</span>
                 <span data-label="เวลา">{thaiTime(item.createdAt)}</span>
                 <span data-label="">
-                  <button className="button secondary" onClick={() => setSelected(item)}>เปิดคำขอ</button>
+                  <button className="button secondary" onClick={() => openRequest(item)}>เปิดและจัดการ</button>
                 </span>
               </div>
             ))
@@ -140,14 +189,36 @@ export default function RequestsPage() {
               )}
             </dl>
             <div className="request-note"><strong>ข้อความจากผู้ป่วย</strong><p>{selected.note || "ไม่มีรายละเอียดเพิ่มเติม"}</p></div>
+            {selected.appointmentId && (
+              <form className="case-form" onSubmit={(event) => { event.preventDefault(); void updateAppointment("reschedule"); }}>
+                <div className="panel-head"><div><h3>จัดการนัดนี้</h3><p>เปลี่ยนวันหรือยกเลิกนัดได้ทันทีจากคำขอนี้</p></div></div>
+                <label className="field"><span>วันและเวลานัดใหม่</span><input type="datetime-local" value={appointmentAt} onChange={(event) => setAppointmentAt(event.target.value)} required /></label>
+                <label className="field"><span>คลินิก</span><input value={appointmentClinic} onChange={(event) => setAppointmentClinic(event.target.value)} required /></label>
+                <div className="modal-actions">
+                  <button type="button" className="button danger" disabled={Boolean(busy)} onClick={() => void updateAppointment("cancel")}>ยกเลิกนัด</button>
+                  <button type="submit" className="button primary" disabled={Boolean(busy)}>บันทึกและเลื่อนนัด</button>
+                </div>
+              </form>
+            )}
+            <label className="field">
+              <span>ข้อความตอบผู้ป่วย</span>
+              <textarea value={staffResponse} onChange={(event) => setStaffResponse(event.target.value)} placeholder="เช่น ติดต่อแล้ว ได้เลื่อนนัดเป็น..." maxLength={500} />
+            </label>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
               <button className="button secondary" disabled={Boolean(busy)} onClick={() => setSelected(null)}>ปิด</button>
               {selected.status === "new" ? (
                 <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "acknowledged")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}รับเรื่อง</button>
-              ) : selected.status === "acknowledged" || selected.status === "contacted" ? (
+              ) : (
+                <>
+                  {selected.status !== "resolved" && (
+                    <button className="button secondary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "contacted")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}ส่งข้อความตอบกลับ</button>
+                  )}
+                  {(selected.status === "acknowledged" || selected.status === "contacted") && (
                 <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "resolved")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}ปิดเรื่อง</button>
-              ) : null}
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}
