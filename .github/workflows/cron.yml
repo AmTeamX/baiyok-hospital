@@ -1,0 +1,19 @@
+name: Scheduled notification jobs
+
+on:
+  schedule:
+    # 3 ครั้ง/วัน (UTC+7: 08:00, 13:00, 18:00 น. ตามเวลาไทย)
+    - cron: "0 1,6,11 * * *"
+  workflow_dispatch:
+
+jobs:
+  process-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process LINE notification outbox
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X GET "${APP_URL}/api/jobs/notifications" \
+            -H "Authorization: Bearer ${CRON_SECRET}"

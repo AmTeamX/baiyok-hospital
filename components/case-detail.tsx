@@ -49,6 +49,17 @@ export function CaseDetail({ id }: { id: string }) {
   const [activityNote, setActivityNote] = useState("");
   const [adding, setAdding] = useState(false);
 
+  const [volunteers, setVolunteers] = useState<Array<{ id: string; full_name: string; active: boolean }>>([]);
+  const [selectedVolunteer, setSelectedVolunteer] = useState("");
+  const [assigning, setAssigning] = useState(false);
+  const [assignMessage, setAssignMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/volunteers").then((response) => response.json()).then((body) => {
+      setVolunteers((body.volunteers ?? []).filter((volunteer: { active: boolean }) => volunteer.active));
+    }).catch(() => {});
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -130,6 +141,30 @@ export function CaseDetail({ id }: { id: string }) {
     }
   }
 
+  async function assign() {
+    if (!detail || !selectedVolunteer) return;
+    setAssigning(true);
+    setAssignMessage(null);
+    try {
+      const response = await fetch(`/api/follow-ups/${detail.id}/assign`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ volunteer_id: selectedVolunteer })
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        setAssignMessage(body.error ?? "มอบหมายไม่สำเร็จ");
+      } else {
+        setAssignMessage(body.notification_status === "unlinked" ? "มอบหมายแล้ว (อสม. ยังไม่ผูก LINE)" : "มอบหมายแล้วและส่งการแจ้งเตือนแล้ว");
+        await load();
+      }
+    } catch {
+      setAssignMessage("มอบหมายไม่สำเร็จ");
+    } finally {
+      setAssigning(false);
+    }
+  }
+
   if (loading) {
     return <div className="page-shell"><div className="state-banner" role="status"><LoaderCircle className="spin" size={18} /><span>กำลังโหลดเคส…</span></div></div>;
   }
@@ -193,6 +228,21 @@ export function CaseDetail({ id }: { id: string }) {
           </form>
         </section>
       </div>
+
+      <section className="panel case-summary" style={{ marginBlockStart: "var(--space-lg)" }}>
+        <h2>มอบหมาย อสม.</h2>
+        <p>ผู้รับผิดชอบปัจจุบัน: {detail.assigneeName ?? "ยังไม่มอบหมาย"}</p>
+        <div className="case-form">
+          <label className="field"><span>เลือก อสม.</span>
+            <select value={selectedVolunteer} onChange={(event) => setSelectedVolunteer(event.target.value)}>
+              <option value="">— เลือก อสม. —</option>
+              {volunteers.map((volunteer) => <option key={volunteer.id} value={volunteer.id}>{volunteer.full_name}</option>)}
+            </select>
+          </label>
+          <button className="button primary" onClick={() => void assign()} disabled={!selectedVolunteer || assigning}>{assigning ? <LoaderCircle className="spin" size={16} /> : "มอบหมาย/เปลี่ยน อสม."}</button>
+        </div>
+        {assignMessage && <p className="form-error" role="status">{assignMessage}</p>}
+      </section>
 
       <section className="panel case-summary" style={{ marginBlockStart: "var(--space-lg)" }}>
         <h2>เชื่อมบัญชี LINE</h2>

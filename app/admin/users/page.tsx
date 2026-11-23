@@ -17,6 +17,9 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [newFullName, setNewFullName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,6 +55,29 @@ export default function AdminUsersPage() {
       setError(toggleError instanceof Error ? toggleError.message : "อัปเดตสถานะไม่สำเร็จ");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function createVolunteer(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newFullName.trim()) return;
+    setCreating(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/volunteers", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ fullName: newFullName.trim(), phone: newPhone.trim() || null })
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "เพิ่ม อสม. ไม่สำเร็จ");
+      setNewFullName("");
+      setNewPhone("");
+      await load();
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "เพิ่ม อสม. ไม่สำเร็จ");
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -107,6 +133,15 @@ export default function AdminUsersPage() {
 
       <section className="panel table-panel" style={{ marginBlockStart: "var(--space-lg)" }}>
         <div className="panel-head"><div><h2>อสม. ({volunteers.length})</h2><p>สร้างรหัสเชื่อม LINE เพื่อให้ อสม. ผูกบัญชีจากแอป LINE</p></div></div>
+
+        <form onSubmit={createVolunteer} className="case-form" style={{ marginBlockEnd: "var(--space-lg)" }}>
+          <div className="two-fields">
+            <label className="field"><span>ชื่อ-นามสกุล อสม.</span><input value={newFullName} onChange={(event) => setNewFullName(event.target.value)} placeholder="เช่น อสม. สมชาย" required /></label>
+            <label className="field"><span>เบอร์โทร</span><input value={newPhone} onChange={(event) => setNewPhone(event.target.value)} /></label>
+          </div>
+          <button className="button primary" disabled={creating}>{creating ? <LoaderCircle className="spin" size={16} /> : null}เพิ่ม อสม.</button>
+        </form>
+
         <div className="patient-table">
           {loading ? (
             <div className="empty-state"><strong>กำลังโหลด</strong></div>
