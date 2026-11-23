@@ -802,6 +802,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_case: {
+        Args: { p_appointment_id: string; p_volunteer_id: string | null; p_priority: string; p_note: string | null; p_actor_id: string }
+        Returns: Json
+      }
       add_follow_up_activity: {
         Args: {
           p_activity_type: string

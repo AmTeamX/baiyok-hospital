@@ -28,6 +28,30 @@ beforeEach(() => {
 });
 
 describe("GET /api/follow-ups/[id]", () => {
+  it("distinguishes a legacy appointment link without a case from a missing case", async () => {
+    mocks.requireClinicalStaff.mockResolvedValue(staff);
+    mocks.hasSupabaseAdmin.mockReturnValue(true);
+    mocks.createAdminClient.mockReturnValue({ from: (table: string) => {
+      const chain: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "order", "limit"]) chain[method] = () => chain;
+      chain.maybeSingle = async () => ({ data: table === "appointments" ? { id: followUpId, patient_id: "patient-1" } : null, error: null });
+      return chain;
+    } });
+    const response = await GET(new Request(`http://localhost/api/follow-ups/${followUpId}`), params());
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: "case_required", appointmentId: followUpId, patientId: "patient-1" });
+  });
+  it("does not report database failures as a nonexistent case", async () => {
+    mocks.requireClinicalStaff.mockResolvedValue(staff);
+    mocks.hasSupabaseAdmin.mockReturnValue(true);
+    const chain: Record<string, unknown> = {};
+    for (const method of ["select", "eq"]) chain[method] = () => chain;
+    chain.maybeSingle = async () => ({ data: null, error: { code: "08000" } });
+    mocks.createAdminClient.mockReturnValue({ from: () => chain });
+    const response = await GET(new Request(`http://localhost/api/follow-ups/${followUpId}`), params());
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).not.toBe("not_found");
+  });
   it.each(["object", "array"])("opens a real case when the related patient is returned as an %s", async (shape) => {
     mocks.requireClinicalStaff.mockResolvedValue(staff);
     mocks.hasSupabaseAdmin.mockReturnValue(true);

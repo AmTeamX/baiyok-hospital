@@ -8,7 +8,7 @@ import { WorkspaceTabs } from "@/components/workspace-tabs";
 import Link from "next/link";
 import { Modal } from "@/components/modal";
 
-type DetailResponse = { ok: boolean; followUp?: FollowUpDetail; error?: string; mode?: "demo" | "database" };
+type DetailResponse = { ok: boolean; followUp?: FollowUpDetail; error?: string; mode?: "demo" | "database"; appointmentId?: string; patientId?: string };
 
 const STATUS_LABEL: Record<MissedStatus, string> = {
   pending: "รอติดตาม",
@@ -36,6 +36,7 @@ export function CaseDetail({ id }: { id: string }) {
   const [detail, setDetail] = useState<FollowUpDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [caseRequired, setCaseRequired] = useState<{ appointmentId: string; patientId: string } | null>(null);
 
   const [status, setStatus] = useState<MissedStatus>("pending");
   const [priority, setPriority] = useState<MissedPriority>("normal");
@@ -68,10 +69,16 @@ export function CaseDetail({ id }: { id: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setCaseRequired(null);
     setConflict(false);
     try {
       const response = await fetch(`/api/follow-ups/${id}`);
       const json = (await response.json()) as DetailResponse;
+      if (json.error === "case_required" && json.appointmentId && json.patientId) {
+        setCaseRequired({ appointmentId: json.appointmentId, patientId: json.patientId });
+        setDetail(null);
+        return;
+      }
       if (!response.ok || !json.followUp) {
         setError(json.error === "not_found" ? "ไม่พบเคสนี้" : json.error ?? "โหลดข้อมูลไม่สำเร็จ");
         setDetail(null);
@@ -179,6 +186,7 @@ export function CaseDetail({ id }: { id: string }) {
     return <div className="page-shell"><div className="state-banner" role="status"><LoaderCircle className="spin" size={18} /><span>กำลังโหลดเคส…</span></div></div>;
   }
   if (error || !detail) {
+    if (caseRequired) return <div className="page-shell"><Link className="text-link" href="/patients/missed">← กลับทะเบียนผู้ขาดนัด</Link><section className="panel case-empty"><h1>นัดนี้ยังไม่มีเคสติดตาม</h1><p>รายการที่เปิดมาคือนัดของผู้ป่วย กรุณาสร้างเคสก่อนมอบหมายงานให้ อสม.</p><Link className="button primary" href={`/cases/new?patientId=${caseRequired.patientId}&appointmentId=${caseRequired.appointmentId}`}>สร้างเคสจากนัดนี้</Link></section></div>;
     return <div className="page-shell"><div className="state-banner error" role="alert"><CircleAlert size={18} /><span>{error ?? "ไม่พบเคสนี้"}</span><button className="button secondary" onClick={() => void load()}><RotateCcw size={16} />ลองใหม่</button></div></div>;
   }
 
@@ -204,7 +212,7 @@ export function CaseDetail({ id }: { id: string }) {
       {saved && <div className="state-banner success" role="status"><UserRoundCheck size={18} /><span>บันทึกการติดตามแล้ว</span></div>}
       {saveError && <div className="state-banner error" role="alert"><CircleAlert size={18} /><span>{saveError}</span></div>}
 
-      <Link className="text-link" href="/patients/missed">← กลับทะเบียนผู้ขาดนัด</Link>
+      <Link className="text-link" href="/cases">← กลับจัดการเคส</Link>
       <WorkspaceTabs value={view} onChange={setView} label="ส่วนงานติดตาม" items={[{ value: "overview", label: "ภาพรวมเคส" }, { value: "record", label: "บันทึกผลติดตาม" }, { value: "activity", label: "ประวัติกิจกรรม" }]} />
       <div className="case-workspace" hidden={view === "activity"}>
       <div className="case-grid">

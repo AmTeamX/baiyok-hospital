@@ -245,7 +245,7 @@ export function MissedRegistry() {
                     {statusLabel(row.status)}{row.overdue ? " · เลยกำหนด" : ""}
                   </i>
                 </span>
-                <Link aria-label={`เปิดเคส ${row.fullName}`} href={`/follow-up/${row.id}`}><ArrowUpRight size={18} /></Link>
+                <Link aria-label={`${row.followUpId ? "เปิดเคส" : "สร้างเคส"} ${row.fullName}`} href={row.followUpId ? `/follow-up/${row.followUpId}` : `/cases/new?appointmentId=${row.appointmentId}`} title={row.followUpId ? "เปิดเคส" : "ยังไม่มีเคส — สร้างเคสติดตาม"}>{row.followUpId ? <ArrowUpRight size={18} /> : "สร้างเคส"}</Link>
               </div>
             ))}
           </div>

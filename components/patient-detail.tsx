@@ -259,7 +259,7 @@ export function PatientDetail({ id }: { id: string }) {
             <div><h2>นัดทั้งหมด</h2><p>นัด {detail.appointments.length} รายการ</p></div>
             <button className="button secondary" onClick={() => setShowAdd(true)}><CalendarPlus size={16} /> เพิ่มนัด</button>
           </div>
-          {detail.appointments.length > 0 && detail.appointments.every((appointment) => !appointment.followUp) && <div className="state-banner" role="status"><span>ยังไม่มีเคสติดตามสำหรับผู้ป่วยรายนี้ ระบบสร้างงานติดตามเมื่อมีนัดขาดนัด ส่วนการตั้ง อสม. เป็นการระบุผู้รับผิดชอบสำหรับงานที่จะเกิดขึ้น</span></div>}
+          {detail.appointments.length > 0 && detail.appointments.every((appointment) => !appointment.followUp) && <div className="state-banner" role="status"><span>ยังไม่มีเคสติดตามสำหรับผู้ป่วยรายนี้ การตั้ง อสม. เป็นการระบุผู้รับผิดชอบสำหรับงานที่จะเกิดขึ้น</span><Link className="button secondary" href={`/cases/new?patientId=${detail.patient.id}`}>สร้างเคสติดตาม</Link></div>}
 
           {detail.appointments.length === 0 ? (
             <div className="state-banner empty"><span>ยังไม่มีนัด</span></div>

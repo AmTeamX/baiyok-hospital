@@ -12,7 +12,7 @@ export default async function DashboardPage() {
       {stats.map((stat) => <article className={`stat-card tone-${stat.tone}`} key={stat.label}><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.helper}</small></article>)}
     </section>
     <div className="dashboard-grid">
-      <section className="panel priority-panel"><div className="panel-head"><div><h2>ต้องทำวันนี้</h2><p>เรียงตามความเร่งด่วน</p></div><Link href="/missed">ดูทั้งหมด <ArrowUpRight size={16} /></Link></div>
+      <section className="panel priority-panel"><div className="panel-head"><div><h2>ต้องทำวันนี้</h2><p>เรียงตามความเร่งด่วน</p></div><Link href="/cases">จัดการเคสทั้งหมด <ArrowUpRight size={16} /></Link></div>
         <div className="task-list">
           {patients.slice(0, 3).map((patient, index) => <Link className="task-row" href={`/follow-up/${patient.id}`} key={patient.id}><span className={`task-rank rank-${index + 1}`}>{index + 1}</span><span className="task-person"><strong>{patient.name}</strong><small>HN {patient.hn} · {patient.village}</small></span><span className="late-badge">เลยนัด {patient.daysLate} วัน</span><ArrowUpRight size={17} /></Link>)}
         </div>

@@ -19,17 +19,22 @@ type AppointmentWithPatient = {
 };
 
 async function getFollowUpDetail(supabase: ReturnType<typeof createAdminClient>, id: string, serviceUnitId: string): Promise<FollowUpDetail | null> {
-  let followUp = (await supabase.from("follow_ups").select("*").eq("id", id).maybeSingle()).data;
+  const initial = await supabase.from("follow_ups").select("*").eq("id", id).maybeSingle();
+  if (initial.error) throw new Error("case_read_failed");
+  let followUp = initial.data;
   if (!followUp) {
-    followUp = (await supabase.from("follow_ups").select("*").eq("appointment_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle()).data;
+    const fallback = await supabase.from("follow_ups").select("*").eq("appointment_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (fallback.error) throw new Error("case_read_failed");
+    followUp = fallback.data;
   }
   if (!followUp) return null;
 
-  const [{ data: appointment }, { data: activities }, { data: assignee }] = await Promise.all([
+  const [{ data: appointment, error: appointmentError }, { data: activities, error: activitiesError }, { data: assignee }] = await Promise.all([
     supabase.from("appointments").select("id, appointment_at, clinic, status, missed_marked_at, patient_id, patients(id, hn, full_name, birth_date, village, phone, service_unit_id)").eq("id", followUp.appointment_id).single(),
     supabase.from("follow_up_activities").select("id, activity_type, note, performed_by, performed_at").eq("follow_up_id", followUp.id).order("performed_at", { ascending: true }),
     followUp.assigned_volunteer_id ? supabase.from("profiles").select("id, full_name").eq("id", followUp.assigned_volunteer_id).maybeSingle() : Promise.resolve({ data: null })
   ]);
+  if (appointmentError || activitiesError) throw new Error("case_read_failed");
 
   const relatedPatient = (appointment as AppointmentWithPatient | null)?.patients;
   const patient = Array.isArray(relatedPatient) ? relatedPatient[0] ?? null : relatedPatient ?? null;
@@ -99,9 +104,19 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   if (!staff.serviceUnitId) return NextResponse.json({ ok: false, error: "service_unit_required" }, { status: 403 });
-  const detail = await getFollowUpDetail(createAdminClient(), id, staff.serviceUnitId);
-  if (!detail) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
-  return NextResponse.json({ ok: true, mode: "database", followUp: detail });
+  if (!uuidPattern.test(id)) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+  try {
+    const db = createAdminClient();
+    const detail = await getFollowUpDetail(db, id, staff.serviceUnitId);
+    if (detail) return NextResponse.json({ ok: true, mode: "database", followUp: detail });
+    // Older registry links used appointment IDs even when no case existed.
+    const { data: appointment, error } = await db.from("appointments").select("id, patient_id, patients!inner(service_unit_id)").eq("id", id).eq("patients.service_unit_id", staff.serviceUnitId).maybeSingle();
+    if (error) throw new Error("appointment_read_failed");
+    if (appointment) return NextResponse.json({ ok: false, error: "case_required", appointmentId: appointment.id, patientId: appointment.patient_id }, { status: 409 });
+    return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+  } catch {
+    return NextResponse.json({ ok: false, error: "โหลดข้อมูลเคสไม่สำเร็จ กรุณาลองใหม่" }, { status: 500 });
+  }
 }
 
 const patchErrors: Record<string, { status: number; error: string }> = {
