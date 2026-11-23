@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
+import { dispatchNotifications } from "@/lib/notification-dispatch";
 
 export const runtime = "nodejs";
 
@@ -84,6 +85,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       attempt_count: 0,
       next_attempt_at: new Date().toISOString()
     });
+  }
+
+  try {
+    await dispatchNotifications({ appointmentId: id });
+  } catch {
+    // The notification remains pending in the outbox and will be retried by the cron job.
   }
 
   return NextResponse.json({ ok: true, mode: "database", appointmentId: id, status, appointmentAt, clinic });

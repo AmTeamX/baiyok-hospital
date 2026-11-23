@@ -52,11 +52,13 @@ describe("notification helpers", () => {
       kind: "appointment_rescheduled",
       link: "https://liff.line.me/123-app?destination=appointments",
       appointmentAt: "2026-12-01T01:30:00.000Z",
-      clinic: "คลินิกสุขภาพ"
+      clinic: "คลินิกสุขภาพ",
+      staffResponse: "เจ้าหน้าที่เลื่อนนัดให้เรียบร้อย"
     });
     expect(flex.type).toBe("bubble");
     expect(JSON.stringify(flex)).toContain("ดูนัดของฉัน");
     expect(JSON.stringify(flex)).toContain("คลินิกสุขภาพ");
+    expect(JSON.stringify(flex)).toContain("เจ้าหน้าที่เลื่อนนัดให้เรียบร้อย");
   });
 
   it("builds distinct volunteer assignment and reminder cards", () => {

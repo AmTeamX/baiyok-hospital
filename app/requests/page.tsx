@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, TriangleAlert } from "lucide-react";
+import { CalendarDays, LoaderCircle, MessageSquareText, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PATIENT_REQUEST_STATUSES, PATIENT_REQUEST_STATUS_LABELS, type PatientRequestStatus } from "@/lib/patient";
@@ -94,6 +94,7 @@ export default function RequestsPage() {
 
   async function updateAppointment(action: "reschedule" | "cancel") {
     if (!selected?.appointmentId) return;
+    if (action === "cancel" && !window.confirm("ยกเลิกนัดที่เกี่ยวข้องกับคำขอนี้ใช่หรือไม่?")) return;
     setBusy(selected.id);
     setError(null);
     try {
@@ -170,40 +171,50 @@ export default function RequestsPage() {
       <Modal open={Boolean(selected)} onClose={() => { if (!busy) setSelected(null); }} title={selected?.typeLabel ?? "รายละเอียดคำขอ"} description={selected?.patientName ?? "ไม่ระบุผู้ป่วย"}>
         {selected && (
           <div className="request-detail">
-            <i className={`status-dot status-req-${selected.status}`}>{selected.statusLabel}</i>
-            <dl className="detail-facts">
-              <div><dt>เหตุผล</dt><dd>{selected.reasonLabel}</dd></div>
-              <div><dt>ส่งเมื่อ</dt><dd>{thaiTime(selected.createdAt)}</dd></div>
-              <div><dt>ผู้รับผิดชอบ</dt><dd>{selected.assigneeName ?? "ยังไม่รับเรื่อง"}</dd></div>
-              {selected.appointmentId && (
-                <div>
-                  <dt>นัดที่เกี่ยวข้อง</dt>
-                  <dd>
-                    <strong>{selected.appointmentClinic ?? "คลินิก"}</strong>
-                    {selected.appointmentAt && <small>{thaiTime(selected.appointmentAt)}</small>}
-                    {selected.patientId && (
-                      <Link className="text-link" href={`/patients/${selected.patientId}`}>เปิดข้อมูลผู้ป่วยและนัด ›</Link>
-                    )}
-                  </dd>
-                </div>
-              )}
-            </dl>
-            <div className="request-note"><strong>ข้อความจากผู้ป่วย</strong><p>{selected.note || "ไม่มีรายละเอียดเพิ่มเติม"}</p></div>
+            <div className="request-summary">
+              <div>
+                <span>เหตุผลคำขอ</span>
+                <strong>{selected.reasonLabel}</strong>
+              </div>
+              <i className={`status-dot status-req-${selected.status}`}>{selected.statusLabel}</i>
+            </div>
+
             {selected.appointmentId && (
-              <form className="case-form" onSubmit={(event) => { event.preventDefault(); void updateAppointment("reschedule"); }}>
-                <div className="panel-head"><div><h3>จัดการนัดนี้</h3><p>เปลี่ยนวันหรือยกเลิกนัดได้ทันทีจากคำขอนี้</p></div></div>
-                <label className="field"><span>วันและเวลานัดใหม่</span><input type="datetime-local" value={appointmentAt} onChange={(event) => setAppointmentAt(event.target.value)} required /></label>
-                <label className="field"><span>คลินิก</span><input value={appointmentClinic} onChange={(event) => setAppointmentClinic(event.target.value)} required /></label>
-                <div className="modal-actions">
-                  <button type="button" className="button danger" disabled={Boolean(busy)} onClick={() => void updateAppointment("cancel")}>ยกเลิกนัด</button>
-                  <button type="submit" className="button primary" disabled={Boolean(busy)}>บันทึกและเลื่อนนัด</button>
+              <section className="request-appointment-card" aria-labelledby="related-appointment-title">
+                <div className="request-section-heading">
+                  <CalendarDays size={20} />
+                  <div>
+                    <span>นัดที่เกี่ยวข้อง</span>
+                    <h3 id="related-appointment-title">{selected.appointmentClinic ?? "คลินิก"}</h3>
+                  </div>
+                  {selected.patientId && <Link className="text-link" href={`/patients/${selected.patientId}`}>ดูผู้ป่วย ›</Link>}
                 </div>
-              </form>
+                {selected.appointmentAt && <p className="request-appointment-current">วันนัดเดิม · {thaiTime(selected.appointmentAt)}</p>}
+                <form className="request-appointment-form" onSubmit={(event) => { event.preventDefault(); void updateAppointment("reschedule"); }}>
+                  <label className="field"><span>เลื่อนเป็น</span><input type="datetime-local" value={appointmentAt} onChange={(event) => setAppointmentAt(event.target.value)} required /></label>
+                  <label className="field"><span>คลินิก</span><input value={appointmentClinic} onChange={(event) => setAppointmentClinic(event.target.value)} required /></label>
+                  <div className="request-appointment-actions">
+                    <button type="button" className="button danger" disabled={Boolean(busy)} onClick={() => void updateAppointment("cancel")}>ยกเลิกนัดนี้</button>
+                    <button type="submit" className="button primary" disabled={Boolean(busy)}>{busy ? <LoaderCircle className="spin" size={16} /> : null}เลื่อนนัดและปิดคำขอ</button>
+                  </div>
+                </form>
+              </section>
             )}
-            <label className="field">
-              <span>ข้อความตอบผู้ป่วย</span>
-              <textarea value={staffResponse} onChange={(event) => setStaffResponse(event.target.value)} placeholder="เช่น ติดต่อแล้ว ได้เลื่อนนัดเป็น..." maxLength={500} />
-            </label>
+
+            <section className="request-message-grid">
+              <div className="request-note">
+                <div className="request-section-heading">
+                  <MessageSquareText size={20} />
+                  <h3>ข้อความจากผู้ป่วย</h3>
+                </div>
+                <p>{selected.note || "ไม่มีรายละเอียดเพิ่มเติม"}</p>
+              </div>
+              <label className="field request-response">
+                <span>ตอบกลับผู้ป่วย</span>
+                <textarea value={staffResponse} onChange={(event) => setStaffResponse(event.target.value)} placeholder="เช่น ติดต่อแล้ว สามารถมารับบริการตามนัดเดิม..." maxLength={500} />
+                <small>ข้อความนี้จะส่งให้ผู้ป่วยทาง LINE เมื่ออัปเดตสถานะคำขอ</small>
+              </label>
+            </section>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
               <button className="button secondary" disabled={Boolean(busy)} onClick={() => setSelected(null)}>ปิด</button>

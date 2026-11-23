@@ -380,6 +380,32 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 .status-req-unable_to_contact { background: var(--color-warning-soft); color: var(--color-warning); }
 .status-q-checked_in { background: var(--color-success-soft); color: var(--color-success); }
 .status-q-cancelled { background: var(--color-paper-3); color: var(--color-ink-2); }
+.request-detail { display: grid; gap: var(--space-md); }
+.request-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding: var(--space-sm) 0; border-block-end: var(--rule-thin) solid var(--color-rule); }
+.request-summary > div { display: grid; gap: 0.2rem; }
+.request-summary span, .request-section-heading span { color: var(--color-muted); font-size: var(--text-xs); font-weight: 800; }
+.request-summary strong { color: var(--color-ink); }
+.request-appointment-card { display: grid; gap: var(--space-sm); padding: var(--space-md); border: 1px solid var(--color-accent); border-radius: var(--radius-lg); background: var(--color-accent-soft); }
+.request-section-heading { display: flex; align-items: center; gap: var(--space-sm); }
+.request-section-heading > svg { flex: 0 0 auto; color: var(--color-accent-strong); }
+.request-section-heading > div { display: grid; min-width: 0; }
+.request-section-heading h3 { margin: 0; font-size: var(--text-lg); }
+.request-section-heading .text-link { margin-inline-start: auto; }
+.request-appointment-current { margin: 0; color: var(--color-ink-2); font-size: var(--text-sm); }
+.request-appointment-form { display: grid; gap: var(--space-sm); }
+.request-appointment-actions { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: var(--space-xs); }
+.request-appointment-actions .button { width: 100%; }
+.request-message-grid { display: grid; gap: var(--space-md); }
+.request-note { padding: var(--space-md); border-radius: var(--radius-md); background: var(--color-paper-2); }
+.request-note p { margin: var(--space-sm) 0 0; white-space: pre-wrap; }
+.request-response textarea { min-height: 6.5rem; resize: vertical; }
+.request-response small { color: var(--color-muted); }
+.button.danger { border: var(--rule-thin) solid color-mix(in oklch, var(--color-danger) 55%, var(--color-rule)); background: var(--color-danger-soft); color: var(--color-danger); }
+@media (min-width: 40rem) {
+  .request-appointment-form { grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.65fr); align-items: end; }
+  .request-appointment-actions { grid-column: 1 / -1; }
+  .request-message-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+}
 .link-invite-result { display: grid; gap: var(--space-sm); justify-items: start; }
 .link-invite-result img { border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); }
 .link-invite-result p { margin-block: 0; }

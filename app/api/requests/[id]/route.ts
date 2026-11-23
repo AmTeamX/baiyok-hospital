@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
 import { isValidPatientRequestStatus } from "@/lib/patient";
+import { dispatchNotifications } from "@/lib/notification-dispatch";
 
 export const runtime = "nodejs";
 
@@ -64,7 +65,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       .eq("status", "active")
       .maybeSingle();
     if (link?.line_account_id) {
-      await supabase.from("notification_logs").insert({
+      const { data: notification } = await supabase.from("notification_logs").insert({
         appointment_id: requestRow.appointment_id ?? null,
         patient_request_id: id,
         recipient_line_account_id: link.line_account_id,
@@ -74,7 +75,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         idempotency_key: `patient_request_status:${id}:${status}`,
         attempt_count: 0,
         next_attempt_at: new Date().toISOString()
-      });
+      }).select("id").single();
+      if (notification?.id) {
+        try {
+          await dispatchNotifications({ notificationId: notification.id });
+        } catch {
+          // The notification remains pending in the outbox and will be retried by the cron job.
+        }
+      }
     }
   }
 
