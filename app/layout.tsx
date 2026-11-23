@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "@fontsource-variable/noto-sans-thai";
 import "../tokens.css";
 import "./globals.css";
@@ -18,7 +19,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th">
-      <body><AppShell>{children}</AppShell></body>
+      <body><Script src="https://static.line-scdn.net/liff/edge/2/sdk.js" strategy="beforeInteractive" /><AppShell>{children}</AppShell></body>
     </html>
   );
 }
