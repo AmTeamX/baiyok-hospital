@@ -12,7 +12,8 @@ export async function GET() {
     return NextResponse.json({ ok: true, mode: "demo", profiles: [] });
   }
 
-  const { data, error } = await createAdminClient()
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, role, active, phone")
     .eq("service_unit_id", staff.serviceUnitId)
@@ -21,5 +22,16 @@ export async function GET() {
 
   if (error) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 500 });
 
-  return NextResponse.json({ ok: true, mode: "database", profiles: data ?? [] });
+  const volunteerIds = (data ?? []).filter((profile) => profile.role === "volunteer").map((profile) => profile.id);
+  const { data: links } = volunteerIds.length
+    ? await supabase.from("line_account_links").select("profile_id, status").eq("role", "volunteer").in("profile_id", volunteerIds)
+    : { data: [] };
+  const linkedIds = new Set((links ?? []).filter((link) => link.status === "active").map((link) => link.profile_id));
+
+  const profiles = (data ?? []).map((profile) => ({
+    ...profile,
+    line_linked: profile.role === "volunteer" ? linkedIds.has(profile.id) : false
+  }));
+
+  return NextResponse.json({ ok: true, mode: "database", profiles });
 }

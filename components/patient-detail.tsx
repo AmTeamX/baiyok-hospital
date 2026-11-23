@@ -175,35 +175,37 @@ export function PatientDetail({ id }: { id: string }) {
   return (
     <div className="page-shell">
       <div className="page-heading compact">
-        <div>
+        <div className="patient-detail-title">
+          <span className="patient-detail-avatar" aria-hidden="true">{detail.patient.fullName.slice(0, 1)}</span>
+          <div>
           <p className="eyebrow">ผู้ป่วย</p>
           <h1>{detail.patient.fullName}</h1>
           <p>HN {detail.patient.hn} · {detail.patient.village ?? "ไม่ระบุหมู่บ้าน"}{detail.patient.phone ? ` · ${detail.patient.phone}` : ""}</p>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
+        <div className="patient-detail-actions">
           <Link className="button secondary" href="/patients"><ArrowLeft size={16} /> ทะเบียนผู้ป่วย</Link>
-          <button className="button secondary" onClick={() => setEditing(!editing)}><Pencil size={16} /> แก้ไขข้อมูล</button>
+          <button className="button secondary" onClick={() => setEditing(true)}><Pencil size={16} /> แก้ไขข้อมูล</button>
         </div>
       </div>
 
-      {editing && (
-        <section className="panel case-edit">
-          <h2>แก้ไขข้อมูลผู้ป่วย</h2>
+      <Modal open={editing} onClose={() => { if (!saving) setEditing(false); }} title="แก้ไขข้อมูลผู้ป่วย" description={`HN ${detail.patient.hn}`}>
           <form onSubmit={saveEdit} className="case-form">
+            {formError && <div className="state-banner error" role="alert"><span>{formError}</span></div>}
             <div className="two-fields">
-              <label className="field"><span>ชื่อ-นามสกุล</span><input value={fullName} onChange={(event) => setFullName(event.target.value)} required /></label>
+              <label className="field"><span>ชื่อ-นามสกุล</span><input value={fullName} onChange={(event) => setFullName(event.target.value)} required autoFocus /></label>
               <label className="field"><span>เบอร์โทร</span><input value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
             </div>
             <div className="two-fields">
               <label className="field"><span>หมู่บ้าน</span><input value={village} onChange={(event) => setVillage(event.target.value)} /></label>
               <label className="field"><span>วันเกิด</span><input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} /></label>
             </div>
-            <button className="button primary" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />} บันทึก</button>
+            <div className="modal-actions"><button type="button" className="button secondary" onClick={() => setEditing(false)} disabled={saving}>ยกเลิก</button><button className="button primary" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />} บันทึก</button></div>
           </form>
-        </section>
-      )}
+      </Modal>
 
-      <div className="case-grid" style={{ marginBlockStart: "var(--space-lg)" }}>
+      <div className="patient-detail-grid">
+        <aside className="patient-side-stack">
         <section className="panel case-summary">
           <h2>อสม. รับผิดชอบ</h2>
           <p>ผู้รับผิดชอบ: {detail.patient.assigneeName ?? "ยังไม่มอบหมาย"}</p>
@@ -224,8 +226,9 @@ export function PatientDetail({ id }: { id: string }) {
           <p>{detail.line.linked ? `เชื่อมแล้ว${detail.line.displayName ? ` (${detail.line.displayName})` : ""}` : "ยังไม่ผูกบัญชี LINE"}</p>
           <LineLinkInvite targetType="patient" targetId={detail.patient.id} role="patient" label={detail.line.linked ? "สร้างรหัสใหม่" : "สร้างรหัสเชื่อม LINE"} />
         </section>
+        </aside>
 
-        <section className="panel case-summary">
+        <section className="panel case-summary patient-appointments">
           <div className="panel-head">
             <div><h2>นัดทั้งหมด</h2><p>นัด {detail.appointments.length} รายการ</p></div>
             <button className="button secondary" onClick={() => setShowAdd(true)}><CalendarPlus size={16} /> เพิ่มนัด</button>

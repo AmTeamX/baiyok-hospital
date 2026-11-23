@@ -4,6 +4,7 @@ import { verifyLiffIdToken } from "@/lib/line/liff";
 import { hashLinkToken, type LinkCodeRole } from "@/lib/line/link-code";
 import { consumeNonce, setSessionCookie } from "@/lib/line/session";
 import { getRichMenuIds, linkRichMenuToUser, selectRichMenuKind } from "@/lib/line/rich-menu";
+import { pushLineText } from "@/lib/line";
 
 type VerifyBody = {
   idToken?: string;
@@ -154,6 +155,18 @@ export async function POST(request: Request) {
     entity_id: account.id,
     after_data: { role: resolvedRole, line_user_id: lineUserId }
   });
+
+  // Best-effort confirmation push — no health data.
+  try {
+    if (process.env.LINE_CHANNEL_ACCESS_TOKEN) {
+      const confirmMessage = resolvedRole === "volunteer"
+        ? "ผูกบัญชี อสม. สำเร็จแล้ว\nเปิดเมนู \"งานของฉัน\" เพื่อดูงานที่ได้รับมอบหมาย"
+        : "ผูกบัญชี LINE สำเร็จแล้ว\nเปิดเมนู \"วันนัดของฉัน\" เพื่อดูวันนัดของคุณ";
+      await pushLineText(lineUserId, confirmMessage);
+    }
+  } catch {
+    // Non-fatal; the identity link already succeeded.
+  }
 
   const sessionSet = await setSessionCookie({ lineAccountId: account.id, lineUserId, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 });
   return NextResponse.json({ ok: true, role: resolvedRole, session: sessionSet });

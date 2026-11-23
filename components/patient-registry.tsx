@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, CircleAlert, LoaderCircle, RotateCcw, Search, UserPlus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight, CircleAlert, MapPin, Phone, RotateCcw, Search, UserRound } from "lucide-react";
 
 type PatientRow = {
   id: string;
@@ -16,16 +16,14 @@ type PatientRow = {
   latestAppointment: { appointmentAt: string; clinic: string; status: string } | null;
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  scheduled: "นัดปกติ",
-  missed: "ขาดนัด",
-  attended: "มาแล้ว",
-  rescheduled: "นัดใหม่",
-  cancelled: "ยกเลิก"
-};
+type View = "all" | "active" | "missed" | "none";
+
+const STATUS_LABEL: Record<string, string> = { scheduled: "นัดปกติ", missed: "ขาดนัด", attended: "มาแล้ว", rescheduled: "นัดใหม่", cancelled: "ยกเลิก" };
+const filters: Array<{ value: View; label: string }> = [
+  { value: "all", label: "ทั้งหมด" }, { value: "active", label: "มีนัด" }, { value: "missed", label: "ขาดนัด" }, { value: "none", label: "ยังไม่มีนัด" }
+];
 
 function thaiDate(value: string) {
-  if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Bangkok" }).format(date);
@@ -36,13 +34,13 @@ export function PatientRegistry() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [q, setQ] = useState(searchParams.get("q") ?? "");
+  const [view, setView] = useState<View>("all");
+  const queryParam = searchParams.get("q")?.trim() ?? "";
   const page = Number(searchParams.get("page") ?? "1") || 1;
-
   const [rows, setRows] = useState<PatientRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const pageSize = 25;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -51,7 +49,7 @@ export function PatientRegistry() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (q.trim()) params.set("q", q.trim());
+      if (queryParam) params.set("q", queryParam);
       params.set("page", String(page));
       params.set("pageSize", String(pageSize));
       const response = await fetch(`/api/patients?${params.toString()}`);
@@ -64,80 +62,62 @@ export function PatientRegistry() {
     } finally {
       setLoading(false);
     }
-  }, [q, page]);
+  }, [page, queryParam]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
-  function goToPage(next: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (next <= 1) params.delete("page");
-    else params.set("page", String(next));
-    if (q.trim()) params.set("q", q.trim());
-    else params.delete("q");
-    router.push(`${pathname}?${params.toString()}`);
-  }
+  const filteredRows = useMemo(() => rows.filter((row) => {
+    if (view === "active") return Boolean(row.latestAppointment && row.latestAppointment.status !== "missed");
+    if (view === "missed") return row.latestAppointment?.status === "missed";
+    if (view === "none") return !row.latestAppointment;
+    return true;
+  }), [rows, view]);
 
-  function search() {
+  function navigate(nextPage: number, query = q) {
     const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
+    if (query.trim()) params.set("q", query.trim());
+    if (nextPage > 1) params.set("page", String(nextPage));
     router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
-    <>
-      <div className="table-tools">
-        <div className="search-field">
-          <Search size={17} />
-          <input
-            value={q}
-            onChange={(event) => setQ(event.target.value)}
-            onKeyDown={(event) => { if (event.key === "Enter") search(); }}
-            placeholder="ค้นหา HN, ชื่อ หรือหมู่บ้าน"
-            aria-label="ค้นหาผู้ป่วย"
-          />
-        </div>
-        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
-          <button className="button secondary" onClick={search}>ค้นหา</button>
-          <Link className="button primary" href="/patients/add"><UserPlus size={17} /> เพิ่มผู้ป่วย</Link>
-        </div>
+    <section className="patient-workspace" aria-label="ทะเบียนผู้ป่วย">
+      <div className="patient-registry-head">
+        <div><span className="registry-kicker">ทะเบียนทั้งหมด</span><strong>{loading ? "—" : total.toLocaleString("th-TH")} ราย</strong><small>แสดงครั้งละ {pageSize} ราย</small></div>
+        <form className="patient-search" onSubmit={(event) => { event.preventDefault(); navigate(1); }} role="search">
+          <Search size={19} />
+          <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="ค้นหาด้วยชื่อ, HN หรือหมู่บ้าน" aria-label="ค้นหาผู้ป่วย" />
+          {q && <button type="button" className="search-clear" onClick={() => { setQ(""); navigate(1, ""); }}>ล้าง</button>}
+          <button className="button primary">ค้นหา</button>
+        </form>
       </div>
 
-      {error && <div className="demo-banner"><CircleAlert size={18} /><span><strong>เกิดข้อผิดพลาด</strong> {error}</span><button className="button secondary" onClick={() => void load()}><RotateCcw size={16} />ลองใหม่</button></div>}
+      <div className="patient-filterbar">
+        <div className="patient-filterset" aria-label="กรองรายการในหน้านี้">{filters.map((filter) => <button key={filter.value} type="button" aria-pressed={view === filter.value} onClick={() => setView(filter.value)}>{filter.label}</button>)}</div>
+        <span>ตัวกรองใช้กับ {rows.length} รายในหน้าปัจจุบัน</span>
+      </div>
 
-      <section className="panel table-panel">
-        <div className="patient-table">
-          <div className="table-row table-header"><span>ผู้ป่วย</span><span>หมู่บ้าน</span><span>นัดล่าสุด</span><span>จำนวนนัด</span><span /></div>
-          {loading ? (
-            <div className="empty-state"><strong>กำลังโหลด</strong></div>
-          ) : rows.length === 0 ? (
-            <div className="empty-state"><strong>ไม่พบผู้ป่วย</strong><p>ลองค้นหาด้วยคำอื่น หรือเพิ่มผู้ป่วยใหม่</p></div>
-          ) : (
-            rows.map((row) => (
-              <div className="table-row" key={row.id}>
-                <span data-label="ผู้ป่วย"><strong>{row.fullName}</strong><small>HN {row.hn}</small></span>
-                <span data-label="หมู่บ้าน">{row.village ?? "—"}</span>
-                <span data-label="นัดล่าสุด">
-                  {row.latestAppointment ? (
-                    <><strong>{row.latestAppointment.clinic} · {thaiDate(row.latestAppointment.appointmentAt)}</strong><small>{STATUS_LABEL[row.latestAppointment.status] ?? row.latestAppointment.status}</small></>
-                  ) : <small>ยังไม่มีนัด</small>}
-                </span>
-                <span data-label="จำนวนนัด">{row.appointmentCount}</span>
-                <Link href={`/patients/${row.id}`} aria-label={`ดูรายละเอียด ${row.fullName}`}>›</Link>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+      {error && <div className="state-banner error"><CircleAlert size={18} /><span><strong>โหลดทะเบียนไม่สำเร็จ</strong> {error}</span><button className="button secondary" onClick={() => void load()}><RotateCcw size={16} />ลองใหม่</button></div>}
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button className="icon-button" onClick={() => goToPage(page - 1)} disabled={page <= 1} aria-label="หน้าก่อนหน้า"><ChevronLeft /></button>
-          <span>หน้า {page} / {totalPages} · {total} ราย</span>
-          <button className="icon-button" onClick={() => goToPage(page + 1)} disabled={page >= totalPages} aria-label="หน้าถัดไป"><ChevronRight /></button>
-        </div>
-      )}
-    </>
+      <div className="patient-list" aria-busy={loading}>
+        <div className="patient-list-header" aria-hidden="true"><span>ผู้ป่วย</span><span>ช่องทางติดต่อ</span><span>นัดล่าสุด</span><span>สถานะ</span><span /></div>
+        {loading ? Array.from({ length: 5 }, (_, index) => <div className="patient-row-skeleton" key={index}><span /><span /><span /></div>) : filteredRows.length === 0 ? (
+          <div className="patient-empty"><UserRound size={28} /><strong>{rows.length === 0 ? "ไม่พบผู้ป่วย" : "ไม่มีผู้ป่วยในกลุ่มนี้"}</strong><p>{rows.length === 0 ? "ลองค้นหาด้วยชื่อ HN หรือหมู่บ้านอื่น" : "เลือกตัวกรองอื่นเพื่อดูรายการในหน้าปัจจุบัน"}</p></div>
+        ) : filteredRows.map((row) => {
+          const status = row.latestAppointment?.status;
+          return (
+            <article className="patient-registry-row" key={row.id}>
+              <div className="patient-identity"><span className="patient-initial" aria-hidden="true">{row.fullName.slice(0, 1)}</span><span><Link href={`/patients/${row.id}`}>{row.fullName}</Link><small>HN {row.hn} · {row.appointmentCount} นัด</small></span></div>
+              <div className="patient-contact"><span><MapPin size={15} />{row.village ?? "ไม่ระบุหมู่บ้าน"}</span><span><Phone size={15} />{row.phone ?? "ไม่ระบุเบอร์โทร"}</span></div>
+              <div className="patient-latest">{row.latestAppointment ? <><strong><CalendarDays size={16} />{thaiDate(row.latestAppointment.appointmentAt)}</strong><small>{row.latestAppointment.clinic}</small></> : <><strong>ยังไม่มีนัด</strong><small>เพิ่มนัดจากหน้ารายละเอียด</small></>}</div>
+              <div><i className={`status-dot status-${status ?? "none"}`}>{status ? STATUS_LABEL[status] ?? status : "ไม่มีนัด"}</i></div>
+              <Link className="patient-open" href={`/patients/${row.id}`}>เปิดประวัติ<ChevronRight size={16} /></Link>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="registry-footer"><span>หน้า {page} จาก {totalPages} · ทั้งหมด {total.toLocaleString("th-TH")} ราย</span><div><button className="button secondary" onClick={() => navigate(page - 1)} disabled={page <= 1}><ChevronLeft size={17} />ก่อนหน้า</button><button className="button secondary" onClick={() => navigate(page + 1)} disabled={page >= totalPages}>ถัดไป<ChevronRight size={17} /></button></div></div>
+    </section>
   );
 }

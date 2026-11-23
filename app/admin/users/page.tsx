@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LineLinkInvite } from "@/components/line-link-invite";
 import { Modal } from "@/components/modal";
 
-type Profile = { id: string; full_name: string; role: string; active: boolean; phone: string | null };
+type Profile = { id: string; full_name: string; role: string; active: boolean; phone: string | null; line_linked: boolean };
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "ผู้ดูแลระบบ",
@@ -92,7 +92,14 @@ export default function AdminUsersPage() {
       <div className="table-row" key={profile.id}>
         <span data-label="ชื่อ"><strong>{profile.full_name}</strong><small>{ROLE_LABELS[profile.role] ?? profile.role}</small></span>
         <span data-label="โทรศัพท์">{profile.phone ?? "—"}</span>
-        <span data-label="สถานะ"><i className={`status-dot ${profile.active ? "status-q-checked_in" : "status-q-cancelled"}`}>{profile.active ? "ใช้งาน" : "ระงับ"}</i></span>
+        <span data-label="สถานะ">
+          <i className={`status-dot ${profile.active ? "status-q-checked_in" : "status-q-cancelled"}`}>{profile.active ? "ใช้งาน" : "ระงับ"}</i>
+          {withInvite ? (
+            <i className={`status-dot ${profile.line_linked ? "status-q-checked_in" : "status-q-cancelled"}`} style={{ marginBlockStart: "var(--space-2xs)" }}>
+              {profile.line_linked ? "เชื่อม LINE แล้ว" : "ยังไม่ผูก LINE"}
+            </i>
+          ) : null}
+        </span>
         <span data-label="จัดการ">
           {withInvite ? (
             <div className="link-invite-actions" style={{ flexWrap: "wrap" }}>
