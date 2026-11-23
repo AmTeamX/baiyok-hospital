@@ -14,7 +14,7 @@ const navigation: NavigationGroup[] = [
     { href: "/", label: "ศูนย์งาน", description: "ภาพรวมและงานเร่งด่วน", icon: House, roles: ["admin", "nurse"] },
     { href: "/patients", label: "ผู้ป่วย", description: "ทะเบียนและผู้ขาดนัด", icon: Users, roles: ["admin", "nurse"] },
     { href: "/requests", label: "คำขอผู้ป่วย", description: "รับเรื่องและติดตามสถานะ", icon: Inbox, roles: ["admin", "nurse"] },
-    { href: "/queue", label: "คิวบริการ", description: "ตารางคิวและเช็กอิน", icon: QrCode, roles: ["admin", "nurse"] }
+    { href: "/queue", label: "QR เช็กอิน", description: "สร้าง QR เช็กอินสำหรับนัด", icon: QrCode, roles: ["admin", "nurse"] }
   ] },
   { label: "การสื่อสาร", items: [
     { href: "/notifications", label: "การส่งข้อความ", description: "สถานะ LINE และส่งซ้ำ", icon: Bell, roles: ["admin", "nurse"] },
@@ -28,7 +28,7 @@ const navigation: NavigationGroup[] = [
 
 const routeNames: Record<string, string> = {
   patients: "ผู้ป่วย", missed: "ผู้ขาดนัด", add: "เพิ่มข้อมูล", import: "นำเข้าข้อมูล", imports: "ประวัตินำเข้า",
-  requests: "คำขอผู้ป่วย", queue: "คิวบริการ", notifications: "การส่งข้อความ", education: "สื่อสุขภาพ",
+  requests: "คำขอผู้ป่วย", queue: "QR เช็กอิน", notifications: "การส่งข้อความ", education: "สื่อสุขภาพ",
   admin: "ระบบ", users: "ทีมและสิทธิ์", "follow-up": "บันทึกติดตาม"
   , "check-in": "QR เช็กอิน"
 };

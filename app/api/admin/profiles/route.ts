@@ -24,14 +24,24 @@ export async function GET() {
 
   const volunteerIds = (data ?? []).filter((profile) => profile.role === "volunteer").map((profile) => profile.id);
   const { data: links } = volunteerIds.length
-    ? await supabase.from("line_account_links").select("profile_id, status").eq("role", "volunteer").in("profile_id", volunteerIds)
+    ? await supabase.from("line_account_links").select("profile_id, line_account_id, status").eq("role", "volunteer").in("profile_id", volunteerIds)
     : { data: [] };
-  const linkedIds = new Set((links ?? []).filter((link) => link.status === "active").map((link) => link.profile_id));
+  const activeLinks = (links ?? []).filter((link) => link.status === "active");
+  const accountIds = [...new Set(activeLinks.map((link) => link.line_account_id))] as string[];
+  const { data: accounts } = accountIds.length
+    ? await supabase.from("line_accounts").select("id, display_name").in("id", accountIds)
+    : { data: [] };
+  const accountNameMap = new Map((accounts ?? []).map((account) => [account.id, account.display_name]));
+  const linkMap = new Map(activeLinks.map((link) => [link.profile_id, link.line_account_id]));
 
-  const profiles = (data ?? []).map((profile) => ({
-    ...profile,
-    line_linked: profile.role === "volunteer" ? linkedIds.has(profile.id) : false
-  }));
+  const profiles = (data ?? []).map((profile) => {
+    const accountId = profile.role === "volunteer" ? linkMap.get(profile.id) : undefined;
+    return {
+      ...profile,
+      line_linked: Boolean(accountId),
+      line_display_name: accountId ? accountNameMap.get(accountId) ?? null : null
+    };
+  });
 
   return NextResponse.json({ ok: true, mode: "database", profiles });
 }

@@ -48,14 +48,15 @@ describe("GET /api/admin/profiles", () => {
         ],
         error: null
       }),
-      () => ({ data: [{ profile_id: "v1", status: "active" }], error: null })
+      () => ({ data: [{ profile_id: "v1", line_account_id: "la1", status: "active" }], error: null }),
+      () => ({ data: [{ id: "la1", display_name: "มาลี LINE" }], error: null })
     ]));
 
     const response = await GET();
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.profiles).toHaveLength(2);
-    expect(body.profiles[0]).toMatchObject({ role: "volunteer", line_linked: true });
+    expect(body.profiles[0]).toMatchObject({ role: "volunteer", line_linked: true, line_display_name: "มาลี LINE" });
   });
 
   it("returns an empty list in demo mode", async () => {

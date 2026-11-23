@@ -358,16 +358,8 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 .status-req-contacted { background: var(--color-accent-soft); color: var(--color-accent-strong); }
 .status-req-resolved { background: var(--color-success-soft); color: var(--color-success); }
 .status-req-unable_to_contact { background: var(--color-warning-soft); color: var(--color-warning); }
-.status-q-booked { background: var(--color-accent-soft); color: var(--color-accent-strong); }
 .status-q-checked_in { background: var(--color-success-soft); color: var(--color-success); }
 .status-q-cancelled { background: var(--color-paper-3); color: var(--color-ink-2); }
-.status-q-no_show { background: var(--color-warning-soft); color: var(--color-warning); }
-.queue-slot-card { padding: var(--space-md); border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); margin-block-end: var(--space-sm); }
-.queue-slot-head { display: flex; flex-wrap: wrap; gap: var(--space-xs); justify-content: space-between; align-items: center; }
-.queue-slot-head span { color: var(--color-muted); font-size: var(--text-sm); }
-.queue-booking-list { display: grid; gap: var(--space-xs); margin: var(--space-sm) 0 0; padding: 0; list-style: none; }
-.queue-booking-list li { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; justify-content: space-between; padding-block: var(--space-2xs); border-block-start: var(--rule-thin) solid var(--color-rule); }
-.queue-booking-actions { display: flex; gap: var(--space-2xs); }
 .link-invite-result { display: grid; gap: var(--space-sm); justify-items: start; }
 .link-invite-result img { border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); }
 .link-invite-result p { margin-block: 0; }

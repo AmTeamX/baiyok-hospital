@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LineLinkInvite } from "@/components/line-link-invite";
 import { Modal } from "@/components/modal";
 
-type Profile = { id: string; full_name: string; role: string; active: boolean; phone: string | null; line_linked: boolean };
+type Profile = { id: string; full_name: string; role: string; active: boolean; phone: string | null; line_linked: boolean; line_display_name: string | null };
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "ผู้ดูแลระบบ",
@@ -84,6 +84,21 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function revoke(id: string) {
+    setBusy(id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/volunteers/${id}/revoke`, { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "ถอนการผูกไม่สำเร็จ");
+      await load();
+    } catch (revokeError) {
+      setError(revokeError instanceof Error ? revokeError.message : "ถอนการผูกไม่สำเร็จ");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const staff = profiles.filter((profile) => profile.role !== "volunteer");
   const volunteers = profiles.filter((profile) => profile.role === "volunteer");
 
@@ -96,14 +111,19 @@ export default function AdminUsersPage() {
           <i className={`status-dot ${profile.active ? "status-q-checked_in" : "status-q-cancelled"}`}>{profile.active ? "ใช้งาน" : "ระงับ"}</i>
           {withInvite ? (
             <i className={`status-dot ${profile.line_linked ? "status-q-checked_in" : "status-q-cancelled"}`} style={{ marginBlockStart: "var(--space-2xs)" }}>
-              {profile.line_linked ? "เชื่อม LINE แล้ว" : "ยังไม่ผูก LINE"}
+              {profile.line_linked ? `เชื่อม LINE แล้ว${profile.line_display_name ? ` (${profile.line_display_name})` : ""}` : "ยังไม่ผูก LINE"}
             </i>
           ) : null}
         </span>
         <span data-label="จัดการ">
           {withInvite ? (
             <div className="link-invite-actions" style={{ flexWrap: "wrap" }}>
-              <LineLinkInvite targetType="profile" targetId={profile.id} role="volunteer" label="สร้างรหัส LINE" />
+              <LineLinkInvite targetType="profile" targetId={profile.id} role="volunteer" label={profile.line_linked ? "สร้างรหัสใหม่" : "สร้างรหัส LINE"} />
+              {profile.line_linked && (
+                <button className="button secondary" disabled={busy === profile.id} onClick={() => void revoke(profile.id)}>
+                  {busy === profile.id ? <LoaderCircle className="spin" size={14} /> : null}ถอนการผูก
+                </button>
+              )}
               <button className="button secondary" disabled={busy === profile.id} onClick={() => void toggle(profile.id, !profile.active)}>
                 {busy === profile.id ? <LoaderCircle className="spin" size={14} /> : null}{profile.active ? "ระงับ" : "เปิดใช้งาน"}
               </button>

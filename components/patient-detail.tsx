@@ -71,6 +71,7 @@ export function PatientDetail({ id }: { id: string }) {
   const [selectedVolunteer, setSelectedVolunteer] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [assignMessage, setAssignMessage] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,6 +123,21 @@ export function PatientDetail({ id }: { id: string }) {
       setAssignMessage("มอบหมายไม่สำเร็จ");
     } finally {
       setAssigning(false);
+    }
+  }
+
+  async function revoke() {
+    if (!detail) return;
+    setRevoking(true);
+    try {
+      const response = await fetch(`/api/patients/${id}/revoke`, { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "ถอนการผูกไม่สำเร็จ");
+      await load();
+    } catch (revokeError) {
+      setFormError(revokeError instanceof Error ? revokeError.message : "ถอนการผูกไม่สำเร็จ");
+    } finally {
+      setRevoking(false);
     }
   }
 
@@ -224,7 +240,14 @@ export function PatientDetail({ id }: { id: string }) {
         <section className="panel case-summary">
           <h2>เชื่อมบัญชี LINE</h2>
           <p>{detail.line.linked ? `เชื่อมแล้ว${detail.line.displayName ? ` (${detail.line.displayName})` : ""}` : "ยังไม่ผูกบัญชี LINE"}</p>
-          <LineLinkInvite targetType="patient" targetId={detail.patient.id} role="patient" label={detail.line.linked ? "สร้างรหัสใหม่" : "สร้างรหัสเชื่อม LINE"} />
+          <div className="link-invite-actions" style={{ flexWrap: "wrap" }}>
+            <LineLinkInvite targetType="patient" targetId={detail.patient.id} role="patient" label={detail.line.linked ? "สร้างรหัสใหม่" : "สร้างรหัสเชื่อม LINE"} />
+            {detail.line.linked && (
+              <button className="button secondary" disabled={revoking} onClick={() => void revoke()}>
+                {revoking ? <LoaderCircle className="spin" size={15} /> : null}ถอนการผูก
+              </button>
+            )}
+          </div>
         </section>
         </aside>
 
