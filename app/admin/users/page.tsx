@@ -1,8 +1,9 @@
 "use client";
 
-import { LoaderCircle, TriangleAlert } from "lucide-react";
+import { LoaderCircle, Plus, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { LineLinkInvite } from "@/components/line-link-invite";
+import { Modal } from "@/components/modal";
 
 type Profile = { id: string; full_name: string; role: string; active: boolean; phone: string | null };
 
@@ -20,6 +21,7 @@ export default function AdminUsersPage() {
   const [newFullName, setNewFullName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [creating, setCreating] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +75,7 @@ export default function AdminUsersPage() {
       if (!response.ok) throw new Error(body.error ?? "เพิ่ม อสม. ไม่สำเร็จ");
       setNewFullName("");
       setNewPhone("");
+      setCreateOpen(false);
       await load();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "เพิ่ม อสม. ไม่สำเร็จ");
@@ -132,15 +135,7 @@ export default function AdminUsersPage() {
       </section>
 
       <section className="panel table-panel" style={{ marginBlockStart: "var(--space-lg)" }}>
-        <div className="panel-head"><div><h2>อสม. ({volunteers.length})</h2><p>สร้างรหัสเชื่อม LINE เพื่อให้ อสม. ผูกบัญชีจากแอป LINE</p></div></div>
-
-        <form onSubmit={createVolunteer} className="case-form" style={{ marginBlockEnd: "var(--space-lg)" }}>
-          <div className="two-fields">
-            <label className="field"><span>ชื่อ-นามสกุล อสม.</span><input value={newFullName} onChange={(event) => setNewFullName(event.target.value)} placeholder="เช่น อสม. สมชาย" required /></label>
-            <label className="field"><span>เบอร์โทร</span><input value={newPhone} onChange={(event) => setNewPhone(event.target.value)} /></label>
-          </div>
-          <button className="button primary" disabled={creating}>{creating ? <LoaderCircle className="spin" size={16} /> : null}เพิ่ม อสม.</button>
-        </form>
+        <div className="panel-head"><div><h2>อสม. ({volunteers.length})</h2><p>สร้างรหัสเชื่อม LINE เพื่อให้ อสม. ผูกบัญชีจากแอป LINE</p></div><button className="button primary" onClick={() => setCreateOpen(true)}><Plus size={17} />เพิ่ม อสม.</button></div>
 
         <div className="patient-table">
           {loading ? (
@@ -152,6 +147,15 @@ export default function AdminUsersPage() {
           )}
         </div>
       </section>
+
+      <Modal open={createOpen} onClose={() => { if (!creating) setCreateOpen(false); }} title="เพิ่ม อสม." description="เพิ่มข้อมูลพื้นฐานก่อนสร้างรหัสเชื่อมบัญชี LINE" size="sm">
+        <form onSubmit={createVolunteer} className="case-form">
+          {error && <div className="state-banner error" role="alert"><span>{error}</span></div>}
+          <label className="field"><span>ชื่อ-นามสกุล อสม.</span><input value={newFullName} onChange={(event) => setNewFullName(event.target.value)} placeholder="เช่น สมชาย ใจดี" required autoFocus /></label>
+          <label className="field"><span>เบอร์โทร</span><input type="tel" value={newPhone} onChange={(event) => setNewPhone(event.target.value)} placeholder="08x-xxx-xxxx" /></label>
+          <div className="modal-actions"><button type="button" className="button secondary" onClick={() => setCreateOpen(false)} disabled={creating}>ยกเลิก</button><button className="button primary" disabled={creating}>{creating ? <><LoaderCircle className="spin" size={16} />กำลังเพิ่ม</> : "เพิ่ม อสม."}</button></div>
+        </form>
+      </Modal>
     </div>
   );
 }

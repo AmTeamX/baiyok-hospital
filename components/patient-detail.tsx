@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, CalendarPlus, CircleAlert, LoaderCircle, Pencil, RotateCcw, Save, UserRoundCheck } from "lucide-react";
 import { LineLinkInvite } from "@/components/line-link-invite";
+import { Modal } from "@/components/modal";
 
 type Appointment = {
   id: string;
@@ -227,27 +228,8 @@ export function PatientDetail({ id }: { id: string }) {
         <section className="panel case-summary">
           <div className="panel-head">
             <div><h2>นัดทั้งหมด</h2><p>นัด {detail.appointments.length} รายการ</p></div>
-            <button className="button secondary" onClick={() => setShowAdd(!showAdd)}><CalendarPlus size={16} /> เพิ่มนัด</button>
+            <button className="button secondary" onClick={() => setShowAdd(true)}><CalendarPlus size={16} /> เพิ่มนัด</button>
           </div>
-
-          {showAdd && (
-            <form onSubmit={addAppointment} className="case-form" style={{ marginBlockEnd: "var(--space-lg)" }}>
-              {formError && <div className="state-banner error" role="alert"><span>{formError}</span></div>}
-              <div className="two-fields">
-                <label className="field"><span>วันที่นัด</span><input type="date" value={apptDate} onChange={(event) => setApptDate(event.target.value)} required /></label>
-                <label className="field"><span>เวลานัด</span><input type="time" value={apptTime} onChange={(event) => setApptTime(event.target.value)} required /></label>
-              </div>
-              <label className="field"><span>คลินิก</span><input value={apptClinic} onChange={(event) => setApptClinic(event.target.value)} required /></label>
-              <label className="field">
-                <span>สถานะ</span>
-                <select value={apptStatus} onChange={(event) => setApptStatus(event.target.value as "scheduled" | "missed")}>
-                  <option value="scheduled">นัดปกติ</option>
-                  <option value="missed">ขาดนัด (สร้างติดตามทันที)</option>
-                </select>
-              </label>
-              <button className="button primary" disabled={adding}>{adding ? <LoaderCircle className="spin" size={16} /> : "เพิ่มนัด"}</button>
-            </form>
-          )}
 
           {detail.appointments.length === 0 ? (
             <div className="state-banner empty"><span>ยังไม่มีนัด</span></div>
@@ -273,6 +255,19 @@ export function PatientDetail({ id }: { id: string }) {
           )}
         </section>
       </div>
+      <Modal open={showAdd} onClose={() => { if (!adding) setShowAdd(false); }} title="เพิ่มนัดใหม่" description={`ผู้ป่วย ${detail.patient.fullName} · HN ${detail.patient.hn}`} size="sm">
+        <form onSubmit={addAppointment} className="case-form">
+          {formError && <div className="state-banner error" role="alert"><span>{formError}</span></div>}
+          <div className="two-fields">
+            <label className="field"><span>วันที่นัด</span><input type="date" value={apptDate} onChange={(event) => setApptDate(event.target.value)} required autoFocus /></label>
+            <label className="field"><span>เวลานัด</span><input type="time" value={apptTime} onChange={(event) => setApptTime(event.target.value)} required /></label>
+          </div>
+          <label className="field"><span>คลินิก</span><input value={apptClinic} onChange={(event) => setApptClinic(event.target.value)} required /></label>
+          <label className="field"><span>สถานะ</span><select value={apptStatus} onChange={(event) => setApptStatus(event.target.value as "scheduled" | "missed")}><option value="scheduled">นัดปกติ</option><option value="missed">ขาดนัด (สร้างติดตามทันที)</option></select></label>
+          {apptStatus === "missed" && <div className="modal-callout"><CircleAlert size={18} /><p>ระบบจะสร้างเคสติดตามทันทีหลังบันทึกนัด</p></div>}
+          <div className="modal-actions"><button type="button" className="button secondary" onClick={() => setShowAdd(false)} disabled={adding}>ยกเลิก</button><button className="button primary" disabled={adding}>{adding ? <><LoaderCircle className="spin" size={16} />กำลังเพิ่ม</> : "เพิ่มนัด"}</button></div>
+        </form>
+      </Modal>
     </div>
   );
 }

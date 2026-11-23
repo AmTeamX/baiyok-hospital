@@ -1,8 +1,9 @@
 "use client";
 
 import QRCode from "qrcode";
-import { Copy, LoaderCircle, QrCode, X } from "lucide-react";
+import { Check, Copy, LoaderCircle, QrCode } from "lucide-react";
 import { useState } from "react";
+import { Modal } from "@/components/modal";
 
 type Props = {
   targetType: "patient" | "profile";
@@ -11,15 +12,20 @@ type Props = {
   label?: string;
 };
 
-/**
- * Staff-facing "สร้างรหัสเชื่อม LINE" button. Calls the one-time link-code API,
- * then renders a QR + link the patient/volunteer can open inside LINE. The code
- * is single-use and expires after 15 minutes.
- */
 export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<{ code: string; url: string; qr: string } | null>(null);
+  const [result, setResult] = useState<{ code: string; qr: string } | null>(null);
+
+  function close() {
+    if (loading) return;
+    setOpen(false);
+    setResult(null);
+    setError("");
+    setCopied(false);
+  }
 
   async function generate() {
     setLoading(true);
@@ -34,11 +40,9 @@ export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
       if (!response.ok) throw new Error(body.error ?? "สร้างรหัสไม่สำเร็จ");
       const token = String(body.token ?? "");
       const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
-      const url = liffId
-        ? `https://liff.line.me/${liffId}?code=${encodeURIComponent(token)}`
-        : `${window.location.origin}/liff/link?code=${encodeURIComponent(token)}`;
+      const url = liffId ? `https://liff.line.me/${liffId}?code=${encodeURIComponent(token)}` : `${window.location.origin}/liff/link?code=${encodeURIComponent(token)}`;
       const qr = await QRCode.toDataURL(url, { width: 320, margin: 1 });
-      setResult({ code: token, url, qr });
+      setResult({ code: token, qr });
     } catch (generateError) {
       setError(generateError instanceof Error ? generateError.message : "สร้างรหัสไม่สำเร็จ");
     } finally {
@@ -50,37 +54,38 @@ export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
     if (!result) return;
     try {
       await navigator.clipboard.writeText(result.code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Clipboard may be unavailable; the code is still shown on screen.
+      setError("คัดลอกอัตโนมัติไม่ได้ กรุณาเลือกรหัสแล้วคัดลอกด้วยตนเอง");
     }
   }
 
-  if (result) {
-    return (
-      <div className="link-invite-result">
-        <p>ให้ผู้ใช้เปิดเมนู "ผูกบัญชี" ใน LINE แล้วกรอกรหัสนี้</p>
-        <div className="link-code-display">{result.code}</div>
-        <div className="link-invite-actions">
-          <button className="button secondary" onClick={() => void copy()}><Copy size={15} /> คัดลอกรหัส</button>
-          <button className="button secondary" onClick={() => setResult(null)}><X size={15} /> ปิด</button>
-        </div>
-        {result.qr && (
-          <>
-            <p>หรือสแกน QR เพื่อเปิดหน้าผูกบัญชี (รหัสอาจถูกกรอกอัตโนมัติ)</p>
-            <img src={result.qr} alt="QR เปิดหน้าผูกบัญชี LINE" width={160} height={160} />
-          </>
-        )}
-        <p>ใช้ได้ครั้งเดียว หมดอายุใน 15 นาที</p>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <button className="button secondary" onClick={() => void generate()} disabled={loading || !targetId}>
-        {loading ? <LoaderCircle className="spin" size={16} /> : <QrCode size={16} />} {label ?? "สร้างรหัสเชื่อม LINE"}
-      </button>
-      {error && <p className="form-error" role="alert">{error}</p>}
-    </div>
+    <>
+      <button type="button" className="button secondary" onClick={() => setOpen(true)} disabled={!targetId}><QrCode size={16} />{label ?? "สร้างรหัสเชื่อม LINE"}</button>
+      <Modal open={open} onClose={close} title={result ? "รหัสเชื่อม LINE พร้อมใช้" : "สร้างรหัสเชื่อม LINE"} description={result ? "ให้ผู้ใช้สแกน QR หรือกรอกรหัสในเมนูผูกบัญชี" : "รหัสใหม่ใช้ได้ครั้งเดียวและหมดอายุใน 15 นาที"} size="sm">
+        {result ? (
+          <div className="line-modal-result">
+            <img src={result.qr} alt="QR เปิดหน้าผูกบัญชี LINE" width={200} height={200} />
+            <div className="line-code-block"><span>รหัสใช้ครั้งเดียว</span><strong>{result.code}</strong></div>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <div className="modal-actions">
+              <button type="button" className="button secondary" onClick={() => void copy()}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "คัดลอกแล้ว" : "คัดลอกรหัส"}</button>
+              <button type="button" className="button primary" onClick={close}>เสร็จสิ้น</button>
+            </div>
+          </div>
+        ) : (
+          <div className="modal-confirm">
+            <div className="modal-callout"><QrCode size={20} /><p>การสร้างรหัสใหม่จะทำให้รหัสเดิมที่ยังไม่ได้ใช้ไม่ควรถูกนำไปแจกต่อ</p></div>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <div className="modal-actions">
+              <button type="button" className="button secondary" onClick={close} disabled={loading}>ยกเลิก</button>
+              <button type="button" className="button primary" onClick={() => void generate()} disabled={loading} autoFocus>{loading ? <><LoaderCircle className="spin" size={16} />กำลังสร้าง</> : "สร้างรหัส"}</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </>
   );
 }

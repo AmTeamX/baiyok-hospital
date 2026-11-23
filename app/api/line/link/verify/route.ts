@@ -26,8 +26,11 @@ function linkCodeError(code: string): { status: number; error: string } {
 }
 
 export async function POST(request: Request) {
-  const clientId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
-  if (!clientId) return NextResponse.json({ ok: false, error: "liff_not_configured" }, { status: 503 });
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  if (!liffId) return NextResponse.json({ ok: false, error: "liff_not_configured" }, { status: 503 });
+  // The verify endpoint expects the LINE Login channel ID (the part before '-'
+  // in the LIFF ID), not the full LIFF ID. The ID token's `aud` is the channel ID.
+  const channelId = liffId.split("-")[0];
 
   let body: VerifyBody;
   try {
@@ -47,7 +50,7 @@ export async function POST(request: Request) {
   }
 
   // The ID token's signature, issuer, audience and expiry are verified server-side.
-  const verified = await verifyLiffIdToken(body.idToken, clientId);
+  const verified = await verifyLiffIdToken(body.idToken, channelId);
   if (!verified.ok) {
     return NextResponse.json({ ok: false, error: verified.reason, detail: verified.detail }, { status: 401 });
   }
