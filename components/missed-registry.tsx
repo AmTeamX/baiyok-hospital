@@ -239,7 +239,7 @@ export function MissedRegistry() {
                 </span>
                 <span data-label="วันนัดเดิม">{thaiDate(row.appointmentAt)}<small>เลยนัด {row.daysLate} วัน</small></span>
                 <span data-label="เหตุผล">{row.missedReason ?? "รอประเมิน"}</span>
-                <span data-label="ผู้รับผิดชอบ">{row.assigneeName ?? "ยังไม่มอบหมาย"}</span>
+                <span data-label="ผู้รับผิดชอบ"><strong className={row.assigneeName ? "assignee-name" : "assignee-name unassigned"}>{row.assigneeName ?? "ยังไม่มอบหมาย"}</strong></span>
                 <span data-label="สถานะ">
                   <i className={`status-dot status-${statusLabel(row.status)}`}>
                     {statusLabel(row.status)}{row.overdue ? " · เลยกำหนด" : ""}

@@ -304,6 +304,19 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 .assignee-current > div strong { font-size: 1.125rem; }
 .assignee-status { padding: 0.35rem 0.55rem; border-radius: var(--radius-round); background: var(--color-success-soft); color: var(--color-success); font-size: var(--text-xs); font-weight: 800; white-space: nowrap; }
 .assignee-status.unassigned { background: var(--color-warning-soft); color: var(--color-warning); }
+.assignee-control { display: grid; gap: var(--space-md); }
+.assignee-control.compact { gap: var(--space-sm); }
+.assignee-control.compact .assignee-current { grid-template-columns: auto minmax(0, 1fr); }
+.assignee-control.compact .assignee-status { grid-column: 2; justify-self: start; }
+.assignee-control .case-form { padding-top: var(--space-xs); }
+.assignee-message { margin: 0; }
+.assignee-name { color: var(--color-ink); font-weight: 800; }
+.assignee-name.unassigned { color: var(--color-warning); }
+.status-badge { display: inline-flex; align-items: center; min-height: 1.75rem; padding-inline: var(--space-xs); border-radius: var(--radius-round); background: var(--color-paper-3); color: var(--color-ink-2); font-size: var(--text-xs); font-weight: 800; white-space: nowrap; }
+.status-badge.pending { background: var(--color-warning-soft); color: var(--color-warning); }
+.status-badge.assigned, .status-badge.contacted { background: var(--color-accent-soft); color: var(--color-accent-strong); }
+.status-badge.rescheduled { background: var(--color-warning-soft); color: var(--color-warning); }
+.status-badge.returned, .status-badge.closed { background: var(--color-success-soft); color: var(--color-success); }
 .timeline { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .timeline li { display: grid; grid-template-columns: 1rem minmax(0, 1fr); gap: var(--space-sm); padding-block: var(--space-sm); border-block-start: var(--rule-thin) solid var(--color-rule); }
 .timeline li:first-child { border-block-start: 0; }

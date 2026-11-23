@@ -7,6 +7,7 @@ import { MISSED_PRIORITIES, MISSED_STATUSES, type MissedPriority, type MissedSta
 import { WorkspaceTabs } from "@/components/workspace-tabs";
 import Link from "next/link";
 import { Modal } from "@/components/modal";
+import { AssigneeControl } from "@/components/assignee-control";
 
 type DetailResponse = { ok: boolean; followUp?: FollowUpDetail; error?: string; mode?: "demo" | "database"; appointmentId?: string; patientId?: string };
 
@@ -253,26 +254,16 @@ export function CaseDetail({ id }: { id: string }) {
 
       <section className="panel case-summary" hidden={view !== "overview"} style={{ marginBlockStart: "var(--space-lg)" }}>
         <h2>มอบหมาย อสม.</h2>
-        <div className="assignee-current" role="group" aria-label="ผู้รับผิดชอบปัจจุบัน">
-          <span className="assignee-current-icon" aria-hidden="true"><UserRoundCheck size={20} /></span>
-          <div>
-            <span>ผู้รับผิดชอบปัจจุบัน</span>
-            <strong>{detail.assigneeName ?? "ยังไม่มอบหมาย"}</strong>
-          </div>
-          <span className={`assignee-status ${detail.assigneeName ? "assigned" : "unassigned"}`}>
-            {detail.assigneeName ? "กำลังรับผิดชอบ" : "รอมอบหมาย"}
-          </span>
-        </div>
-        <div className="case-form">
-          <label className="field"><span>เปลี่ยนเป็น อสม.</span>
-            <select value={selectedVolunteer} onChange={(event) => setSelectedVolunteer(event.target.value)}>
-              <option value="">เลือก อสม. ที่ต้องการเปลี่ยน</option>
-              {volunteers.map((volunteer) => <option key={volunteer.id} value={volunteer.id}>{volunteer.full_name}</option>)}
-            </select>
-          </label>
-          <button className="button primary" onClick={() => void assign()} disabled={!selectedVolunteer || selectedVolunteer === detail.assignedVolunteerId || assigning}>{assigning ? <LoaderCircle className="spin" size={16} /> : "ยืนยันเปลี่ยนผู้รับผิดชอบ"}</button>
-        </div>
-        {assignMessage && <p className="form-error" role="status">{assignMessage}</p>}
+        <AssigneeControl
+          name={detail.assigneeName}
+          assignedId={detail.assignedVolunteerId}
+          volunteers={volunteers}
+          selectedVolunteer={selectedVolunteer}
+          onSelectedVolunteer={setSelectedVolunteer}
+          onAssign={() => void assign()}
+          assigning={assigning}
+          message={assignMessage}
+        />
       </section>
 
       <section className="panel case-summary" hidden={view !== "overview"} style={{ marginBlockStart: "var(--space-lg)" }}>

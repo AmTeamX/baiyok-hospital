@@ -3,6 +3,8 @@ import {
   assignmentDeepLink,
   buildAssignmentMessage,
   buildSlaReminderMessage,
+  buildPatientStatusFlex,
+  buildVolunteerTaskFlex,
   deliverNotification,
   isUnlinkedRecipient,
   MAX_NOTIFICATION_ATTEMPTS,
@@ -41,6 +43,28 @@ describe("notification helpers", () => {
     const message = buildSlaReminderMessage("abc-123", "https://app.example");
     expect(message).toContain("abc-123");
     expect(message).not.toMatch(/HN|ชื่อ-นามสกุล|เบาหวาน|ความดัน|ยารักษา|คลินิก/);
+  });
+
+  it("builds a patient status Flex card with the appointment link", () => {
+    const flex = buildPatientStatusFlex({
+      kind: "appointment_rescheduled",
+      link: "https://liff.line.me/123-app?destination=appointments",
+      appointmentAt: "2026-12-01T01:30:00.000Z",
+      clinic: "คลินิกสุขภาพ"
+    });
+    expect(flex.type).toBe("bubble");
+    expect(JSON.stringify(flex)).toContain("ดูนัดของฉัน");
+    expect(JSON.stringify(flex)).toContain("คลินิกสุขภาพ");
+  });
+
+  it("builds distinct volunteer assignment and reminder cards", () => {
+    vi.stubEnv("NEXT_PUBLIC_LIFF_ID", "123-app");
+    const assigned = buildVolunteerTaskFlex("follow-1", "follow_up_assigned", "https://app.example");
+    const reminder = buildVolunteerTaskFlex("follow-1", "follow_up_sla_reminder", "https://app.example");
+    expect(JSON.stringify(assigned)).toContain("มีงานติดตามใหม่");
+    expect(JSON.stringify(reminder)).toContain("งานติดตามค้างการบันทึก");
+    expect(JSON.stringify(assigned)).toContain("เปิดงานติดตาม");
+    vi.unstubAllEnvs();
   });
 
   it("detects unlinked recipients", () => {

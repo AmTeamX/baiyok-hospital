@@ -3,13 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   hasSupabaseAdmin: vi.fn(),
   createAdminClient: vi.fn(),
-  pushLineText: vi.fn()
+  pushLineText: vi.fn(),
+  pushLineFlex: vi.fn()
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({ hasSupabaseAdmin: mocks.hasSupabaseAdmin, createAdminClient: mocks.createAdminClient }));
 vi.mock("@/lib/line", async () => {
   const actual = await vi.importActual<typeof import("@/lib/line")>("@/lib/line");
-  return { ...actual, pushLineText: mocks.pushLineText };
+  return { ...actual, pushLineText: mocks.pushLineText, pushLineFlex: mocks.pushLineFlex };
 });
 
 import { GET } from "@/app/api/jobs/notifications/route";
@@ -52,6 +53,7 @@ describe("GET /api/jobs/notifications", () => {
     ]));
     expect((await GET(authorizedRequest())).status).toBe(200);
     expect(mocks.pushLineText).not.toHaveBeenCalled();
+    expect(mocks.pushLineFlex).not.toHaveBeenCalled();
   });
   it("rejects callers without the cron secret", async () => {
     const response = await GET(new Request("http://localhost/api/jobs/notifications", { headers: { authorization: "Bearer wrong" } }));
@@ -66,7 +68,7 @@ describe("GET /api/jobs/notifications", () => {
 
   it("sends pending assignments via the active volunteer LINE link and marks them sent", async () => {
     mocks.hasSupabaseAdmin.mockReturnValue(true);
-    mocks.pushLineText.mockResolvedValue(undefined);
+    mocks.pushLineFlex.mockResolvedValue(undefined);
     mocks.createAdminClient.mockReturnValue(queueSupabase([
       () => ({ data: [candidate], error: null }),
       () => ({ data: [{ profile_id: "v1", line_account_id: "la1" }], error: null }),
@@ -79,7 +81,8 @@ describe("GET /api/jobs/notifications", () => {
     const body = await response.json();
     expect(response.status).toBe(200);
     expect(body).toMatchObject({ processed: 1, sent: 1, failed: 0, unlinked: 0 });
-    expect(mocks.pushLineText).toHaveBeenCalledTimes(1);
+    expect(mocks.pushLineFlex).toHaveBeenCalledTimes(1);
+    expect(mocks.pushLineFlex.mock.calls[0][2]).toBe("มีงานติดตามผู้ป่วยใหม่");
   });
 
   it("marks unlinked recipients without calling LINE", async () => {
@@ -96,11 +99,12 @@ describe("GET /api/jobs/notifications", () => {
     const body = await response.json();
     expect(body).toMatchObject({ processed: 1, sent: 0, failed: 0, unlinked: 1 });
     expect(mocks.pushLineText).not.toHaveBeenCalled();
+    expect(mocks.pushLineFlex).not.toHaveBeenCalled();
   });
 
   it("records a failure without rolling back the assignment", async () => {
     mocks.hasSupabaseAdmin.mockReturnValue(true);
-    mocks.pushLineText.mockRejectedValue(new Error("LINE down"));
+    mocks.pushLineFlex.mockRejectedValue(new Error("LINE down"));
     mocks.createAdminClient.mockReturnValue(queueSupabase([
       () => ({ data: [candidate], error: null }),
       () => ({ data: [{ profile_id: "v1", line_account_id: "la1" }], error: null }),
@@ -117,7 +121,7 @@ describe("GET /api/jobs/notifications", () => {
 
   it("sends the SLA reminder text for reminder notifications", async () => {
     mocks.hasSupabaseAdmin.mockReturnValue(true);
-    mocks.pushLineText.mockResolvedValue(undefined);
+    mocks.pushLineFlex.mockResolvedValue(undefined);
     mocks.createAdminClient.mockReturnValue(queueSupabase([
       () => ({ data: [{ ...candidate, kind: "follow_up_sla_reminder" }], error: null }),
       () => ({ data: [{ profile_id: "v1", line_account_id: "la1" }], error: null }),
@@ -128,15 +132,14 @@ describe("GET /api/jobs/notifications", () => {
 
     const response = await GET(authorizedRequest());
     expect(response.status).toBe(200);
-    expect(mocks.pushLineText).toHaveBeenCalledTimes(1);
-    const sentText = mocks.pushLineText.mock.calls[0][1];
-    expect(sentText).toContain("ยังไม่มีผล");
-    expect(sentText).not.toMatch(/HN|ชื่อ-นามสกุล|เบาหวาน|ความดัน|ยารักษา|คลินิก/);
+    expect(mocks.pushLineFlex).toHaveBeenCalledTimes(1);
+    expect(mocks.pushLineFlex.mock.calls[0][2]).toBe("งานติดตามค้างการบันทึก");
+    expect(JSON.stringify(mocks.pushLineFlex.mock.calls[0][1])).not.toMatch(/HN|ชื่อ-นามสกุล|เบาหวาน|ความดัน|ยารักษา|คลินิก/);
   });
 
   it("marks a blocked recipient as blocked without retrying", async () => {
     mocks.hasSupabaseAdmin.mockReturnValue(true);
-    mocks.pushLineText.mockRejectedValue(new LinePushBlockedError("The user has blocked or unfriended the bot"));
+    mocks.pushLineFlex.mockRejectedValue(new LinePushBlockedError("The user has blocked or unfriended the bot"));
     mocks.createAdminClient.mockReturnValue(queueSupabase([
       () => ({ data: [candidate], error: null }),
       () => ({ data: [{ profile_id: "v1", line_account_id: "la1" }], error: null }),

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LinePushBlockedError, isLineBlocked, pushLineText } from "@/lib/line";
+import { LinePushBlockedError, isLineBlocked, pushLineFlex, pushLineText } from "@/lib/line";
 
 beforeEach(() => {
   process.env.LINE_CHANNEL_ACCESS_TOKEN = "test-token";
@@ -48,6 +48,17 @@ describe("pushLineText", () => {
     globalThis.fetch = fetchImpl as unknown as typeof fetch;
 
     await expect(pushLineText("U123", "hello")).rejects.toThrow(/LINE push failed with status 500/);
+  });
+});
+
+describe("pushLineFlex", () => {
+  it("sends a Flex message with an alternate text", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    globalThis.fetch = fetchImpl;
+    await pushLineFlex("U123", { type: "bubble" }, "นัดถูกเลื่อน", "11111111-1111-4111-8111-111111111111");
+    const body = JSON.parse(String((fetchImpl.mock.calls[0][1] as RequestInit).body));
+    expect(body.messages[0]).toMatchObject({ type: "flex", altText: "นัดถูกเลื่อน" });
+    expect(body.notificationDisabled).toBe(false);
   });
 });
 

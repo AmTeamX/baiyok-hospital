@@ -62,6 +62,128 @@ export function buildAppointmentStatusMessage(status: "rescheduled" | "cancelled
   return `${base}\nโปรดตรวจสอบวัน เวลา และคลินิกล่าสุด:\n${patientAppointmentDeepLink(appointmentId, appUrl)}`;
 }
 
+export function buildPatientStatusFlex(options: {
+  kind: "patient_request_status" | "appointment_rescheduled" | "appointment_cancelled";
+  status?: string;
+  link: string;
+  appointmentAt?: string;
+  clinic?: string;
+}) {
+  const isCancelled = options.kind === "appointment_cancelled";
+  const isRescheduled = options.kind === "appointment_rescheduled";
+  const requestLabels: Record<string, string> = {
+    new: "ได้รับคำขอของคุณแล้ว",
+    acknowledged: "เจ้าหน้าที่รับเรื่องแล้ว",
+    contacted: "เจ้าหน้าที่ติดต่อเรื่องนี้แล้ว",
+    resolved: "ดำเนินการเรียบร้อย",
+    unable_to_contact: "ไม่สามารถติดต่อได้ในขณะนี้"
+  };
+  const title = isCancelled
+    ? "นัดถูกยกเลิก"
+    : isRescheduled
+      ? "นัดถูกเลื่อนเรียบร้อย"
+      : requestLabels[options.status ?? "new"] ?? "มีการอัปเดตคำขอ";
+  const accent = isCancelled ? "#C94B4B" : isRescheduled ? "#1677A5" : "#2F7D68";
+  let detail = "ตรวจสอบรายละเอียดและนัดครั้งถัดไปได้ที่นี่";
+  if (options.appointmentAt) {
+    detail = new Intl.DateTimeFormat("th-TH", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "Asia/Bangkok"
+    }).format(new Date(options.appointmentAt));
+  }
+
+  return {
+    type: "bubble",
+    size: "kilo",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: accent,
+      paddingAll: "16px",
+      contents: [
+        { type: "text", text: "รพ.สต. สระโคล่", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: title, weight: "bold", color: "#FFFFFF", size: "xl", margin: "sm", wrap: true }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      paddingAll: "18px",
+      contents: [
+        { type: "text", text: detail, size: "md", weight: "bold", color: "#24332F", wrap: true },
+        ...(options.clinic ? [{ type: "text", text: options.clinic, size: "sm", color: "#66736F", margin: "md", wrap: true }] : [])
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: accent,
+          action: { type: "uri", label: "ดูนัดของฉัน", uri: options.link }
+        }
+      ]
+    }
+  };
+}
+
+export function buildVolunteerTaskFlex(
+  followUpId: string,
+  kind: "follow_up_assigned" | "follow_up_sla_reminder",
+  appUrl?: string
+) {
+  const isReminder = kind === "follow_up_sla_reminder";
+  const title = isReminder ? "งานติดตามค้างการบันทึก" : "มีงานติดตามใหม่";
+  const detail = isReminder
+    ? "กรุณาตรวจสอบและบันทึกผลการติดตามผู้ป่วย"
+    : "มีเคสติดตามใหม่รอการดำเนินงาน";
+  const accent = isReminder ? "#C58A28" : "#1677A5";
+  const link = assignmentDeepLink(followUpId, appUrl);
+
+  return {
+    type: "bubble",
+    size: "kilo",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: accent,
+      paddingAll: "16px",
+      contents: [
+        { type: "text", text: "งาน อสม.", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: title, weight: "bold", color: "#FFFFFF", size: "xl", margin: "sm", wrap: true }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      paddingAll: "18px",
+      contents: [
+        { type: "text", text: detail, size: "md", weight: "bold", color: "#24332F", wrap: true },
+        { type: "text", text: "เปิดรายละเอียดงานแล้วบันทึกผลในระบบ", size: "sm", color: "#66736F", margin: "md", wrap: true }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: accent,
+          action: { type: "uri", label: "เปิดงานติดตาม", uri: link }
+        }
+      ]
+    }
+  };
+}
+
 /** Pick the outbound text for a notification kind without exposing clinical detail. */
 export function buildNotificationMessage(
   kind: string,
@@ -96,7 +218,8 @@ export type DeliveryResult =
 export async function deliverNotification(
   notification: { id: string; followUpId: string | null; kind: string; lineUserId: string | null; attemptCountAfterClaim: number; appointmentId?: string | null; patientRequestStatus?: string },
   send: (lineUserId: string, message: string) => Promise<void>,
-  appUrl?: string
+  appUrl?: string,
+  sendRich?: (lineUserId: string) => Promise<void>
 ): Promise<DeliveryResult> {
   if (isUnlinkedRecipient(notification.lineUserId)) return { status: "unlinked" };
   const message = buildNotificationMessage(notification.kind, notification.followUpId ?? notification.id, appUrl, {
@@ -104,7 +227,8 @@ export async function deliverNotification(
     patientRequestStatus: notification.patientRequestStatus
   });
   try {
-    await send(notification.lineUserId as string, message);
+    if (sendRich) await sendRich(notification.lineUserId as string);
+    else await send(notification.lineUserId as string, message);
     return { status: "sent" };
   } catch (error) {
     const messageText = error instanceof Error ? error.message : "unknown error";

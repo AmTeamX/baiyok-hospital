@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, CalendarPlus, CircleAlert, LoaderCircle, Pencil, RotateCcw, Save, UserRoundCheck } from "lucide-react";
+import { ArrowLeft, CalendarPlus, CircleAlert, LoaderCircle, Pencil, RotateCcw, Save } from "lucide-react";
 import { LineLinkInvite } from "@/components/line-link-invite";
 import { Modal } from "@/components/modal";
+import { AssigneeControl } from "@/components/assignee-control";
 
 type Appointment = {
   id: string;
@@ -85,6 +86,7 @@ export function PatientDetail({ id }: { id: string }) {
       setPhone(body.patient.phone ?? "");
       setVillage(body.patient.village ?? "");
       setBirthDate(body.patient.birthDate ?? "");
+      setSelectedVolunteer("");
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "โหลดข้อมูลไม่สำเร็จ");
     } finally {
@@ -227,17 +229,17 @@ export function PatientDetail({ id }: { id: string }) {
         <aside className="patient-side-stack">
         <section className="panel case-summary">
           <h2>อสม. รับผิดชอบ</h2>
-          <p>ผู้รับผิดชอบ: {detail.patient.assigneeName ?? "ยังไม่มอบหมาย"}</p>
-          <div className="case-form">
-            <label className="field"><span>เลือก อสม.</span>
-              <select value={selectedVolunteer} onChange={(event) => setSelectedVolunteer(event.target.value)}>
-                <option value="">— เลือก อสม. —</option>
-                {volunteers.map((volunteer) => <option key={volunteer.id} value={volunteer.id}>{volunteer.full_name}</option>)}
-              </select>
-            </label>
-            <button className="button primary" onClick={() => void assign()} disabled={!selectedVolunteer || assigning}>{assigning ? <LoaderCircle className="spin" size={16} /> : "มอบหมาย/เปลี่ยน อสม."}</button>
-          </div>
-          {assignMessage && <p className="form-error" role="status">{assignMessage}</p>}
+          <AssigneeControl
+            name={detail.patient.assigneeName}
+            assignedId={detail.patient.assignedVolunteerId}
+            volunteers={volunteers}
+            selectedVolunteer={selectedVolunteer}
+            onSelectedVolunteer={setSelectedVolunteer}
+            onAssign={() => void assign()}
+            assigning={assigning}
+            message={assignMessage}
+            compact
+          />
         </section>
 
         <section className="panel case-summary">

@@ -1,6 +1,6 @@
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
-import { pushLineText } from "@/lib/line";
-import { deliverNotification } from "@/lib/notifications";
+import { pushLineFlex, pushLineText } from "@/lib/line";
+import { buildPatientStatusFlex, buildVolunteerTaskFlex, deliverNotification, patientAppointmentDeepLink } from "@/lib/notifications";
 
 const BATCH_SIZE = 20;
 
@@ -66,6 +66,20 @@ export async function dispatchNotifications(options: { notificationId?: string; 
     for (const row of requestRows ?? []) patientRequestStatusMap.set(row.id, row.status);
   }
 
+  const appointmentIds = [...new Set(candidates
+    .map((item: { appointment_id: string | null }) => item.appointment_id)
+    .filter(Boolean))] as string[];
+  const appointmentMap = new Map<string, { appointment_at: string; clinic: string }>();
+  if (appointmentIds.length) {
+    const { data: appointments } = await supabase
+      .from("appointments")
+      .select("id, appointment_at, clinic")
+      .in("id", appointmentIds);
+    for (const appointment of appointments ?? []) {
+      appointmentMap.set(appointment.id, { appointment_at: appointment.appointment_at, clinic: appointment.clinic });
+    }
+  }
+
   let sent = 0;
   let failed = 0;
   let unlinked = 0;
@@ -97,7 +111,38 @@ export async function dispatchNotifications(options: { notificationId?: string; 
         appointmentId: candidate.appointment_id,
         patientRequestStatus: candidate.patient_request_id ? patientRequestStatusMap.get(candidate.patient_request_id) : undefined
       },
-      (to, message) => pushLineText(to, message, candidate.id)
+      (to, message) => pushLineText(to, message, candidate.id),
+      undefined,
+      candidate.kind === "follow_up_assigned" || candidate.kind === "follow_up_sla_reminder"
+        ? (to) => {
+            const flex = buildVolunteerTaskFlex(
+              candidate.follow_up_id ?? candidate.id,
+              candidate.kind,
+              undefined
+            );
+            const altText = candidate.kind === "follow_up_sla_reminder"
+              ? "งานติดตามค้างการบันทึก"
+              : "มีงานติดตามผู้ป่วยใหม่";
+            return pushLineFlex(to, flex, altText, candidate.id);
+          }
+        : ["patient_request_status", "appointment_rescheduled", "appointment_cancelled"].includes(candidate.kind)
+          ? (to) => {
+            const appointment = candidate.appointment_id ? appointmentMap.get(candidate.appointment_id) : undefined;
+            const flex = buildPatientStatusFlex({
+              kind: candidate.kind,
+              status: candidate.patient_request_id ? patientRequestStatusMap.get(candidate.patient_request_id) : undefined,
+              link: patientAppointmentDeepLink(candidate.appointment_id ?? "", undefined),
+              appointmentAt: appointment?.appointment_at,
+              clinic: appointment?.clinic
+            });
+            const altText = candidate.kind === "appointment_cancelled"
+              ? "นัดของคุณถูกยกเลิก"
+              : candidate.kind === "appointment_rescheduled"
+                ? "นัดของคุณถูกเลื่อนเรียบร้อย"
+                : "มีการอัปเดตคำขอของคุณ";
+            return pushLineFlex(to, flex, altText, candidate.id);
+          }
+        : undefined
     );
 
     if (result.status === "sent") {
