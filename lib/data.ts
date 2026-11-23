@@ -25,14 +25,14 @@ export async function getMissedPatients(): Promise<{ mode: "demo" | "database"; 
   const { data: appointments, error } = await supabase.from("appointments").select("id, appointment_at, patients!inner(hn, full_name, birth_date, village)").eq("status", "missed").order("appointment_at", { ascending: true }).limit(100);
   if (error) throw error;
   const ids = (appointments ?? []).map(item => item.id);
-  const { data: followUps } = ids.length ? await supabase.from("follow_ups").select("appointment_id, status, missed_reason, assigned_volunteer_id").in("appointment_id", ids) : { data: [] };
+  const { data: followUps } = ids.length ? await supabase.from("follow_ups").select("id, appointment_id, status, missed_reason, assigned_volunteer_id").in("appointment_id", ids) : { data: [] };
   const volunteerIds = [...new Set((followUps ?? []).map(item => item.assigned_volunteer_id).filter(Boolean))] as string[];
   const { data: volunteers } = volunteerIds.length ? await supabase.from("profiles").select("id, full_name").in("id", volunteerIds) : { data: [] };
   const followMap = new Map((followUps ?? []).map(item => [item.appointment_id, item])); const volunteerMap = new Map((volunteers ?? []).map(item => [item.id, item.full_name]));
   const now = Date.now();
   const patients = (appointments ?? []).map(item => {
     const patient = Array.isArray(item.patients) ? item.patients[0] : item.patients; const follow = followMap.get(item.id);
-    return { id: item.id, hn: patient.hn, name: patient.full_name, age: ageFromBirthDate(patient.birth_date), village: patient.village || "ไม่ระบุหมู่บ้าน", appointment: thaiDate(item.appointment_at), daysLate: Math.max(0, Math.floor((now - new Date(item.appointment_at).getTime()) / 86400000)), reason: follow?.missed_reason || "รอประเมิน", assignee: follow?.assigned_volunteer_id ? volunteerMap.get(follow.assigned_volunteer_id) || "มอบหมายแล้ว" : "ยังไม่มอบหมาย", status: displayStatus(follow?.status) } satisfies MissedPatient;
+    return { id: follow?.id ?? item.id, hn: patient.hn, name: patient.full_name, age: ageFromBirthDate(patient.birth_date), village: patient.village || "ไม่ระบุหมู่บ้าน", appointment: thaiDate(item.appointment_at), daysLate: Math.max(0, Math.floor((now - new Date(item.appointment_at).getTime()) / 86400000)), reason: follow?.missed_reason || "รอประเมิน", assignee: follow?.assigned_volunteer_id ? volunteerMap.get(follow.assigned_volunteer_id) || "มอบหมายแล้ว" : "ยังไม่มอบหมาย", status: displayStatus(follow?.status) } satisfies MissedPatient;
   });
   return { mode: "database", patients };
 }

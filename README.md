@@ -10,13 +10,13 @@ cp .env.example .env.local
 npm run dev
 ```
 
-ตรวจความพร้อมของ runtime ได้ที่ `GET /api/health/config` ระบบจะรายงานเฉพาะชื่อ configuration ที่ขาด ไม่แสดงค่า secret
+ตรวจความพร้อมของ runtime ได้ที่ `GET /api/health/config` ระบบจะรายงานเฉพาะชื่อ configuration ที่ขาด ไม่แสดงค่า secret โดย `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CHECKIN_SIGNING_SECRET` และ `CRON_SECRET` เป็น required สำหรับ production; ค่า LINE OA/LIFF เป็น optional จนกว่าจะเปิด workflow LINE จริง
 
 ถ้ายังไม่ใส่ Supabase ระบบจะทำงานในโหมดสาธิตโดยไม่บันทึกข้อมูลจริง เมื่อใส่ค่า Supabase แล้วหน้าเจ้าหน้าที่จะบังคับเข้าสู่ระบบ และ API ตรวจบทบาท `admin`/`nurse` ซ้ำก่อนใช้ service role
 
 ## ตั้งค่า Supabase
 
-1. สร้างโปรเจกต์ Supabase และรัน `supabase/migrations/001_initial.sql`, `002_production_workflows.sql` และ `003_rls_policies.sql` ตามลำดับใน SQL editor
+1. สร้างโปรเจกต์ Supabase และรัน `supabase/migrations/001_initial.sql`, `002_production_workflows.sql`, `003_rls_policies.sql`, `004_import_commit_rpc.sql` และ `005_missed_workflows.sql` ตามลำดับใน SQL editor
 2. คัดลอก `.env.example` เป็น `.env.local` แล้วเติมค่าจริง โดยห้าม commit ไฟล์ที่มี secret
 3. เติม `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` และ `SUPABASE_SERVICE_ROLE_KEY` ใน `.env.local`
 4. สร้างผู้ใช้เจ้าหน้าที่ใน Supabase Auth แล้วเพิ่มแถวที่ตรงกันใน `profiles` พร้อม `service_unit_id` ของ รพ.สต. สระโคล่
@@ -32,7 +32,9 @@ npm run dev
 3. เติม `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `NEXT_PUBLIC_LIFF_ID`, `NEXT_PUBLIC_LINE_OA_BASIC_ID` และสุ่ม `CHECKIN_SIGNING_SECRET` สำหรับลงลายเซ็น QR
 4. เปิด webhook redelivery และตั้ง Rich Menu ให้ลิงก์ไปหน้าวันนัด สื่อสุขภาพ แจ้งปัญหา และขอคำปรึกษา
 
-Webhook ตรวจ `x-line-signature` ทุกครั้งและเก็บเฉพาะ metadata ที่จำเป็นเพื่อกัน event ซ้ำ ส่วน Vercel Cron เรียก `/api/jobs/reminders` เวลา 08:00 น. ประเทศไทยทุกวัน เพื่อส่งข้อความเตือนนัดวันถัดไปแบบไม่ส่งซ้ำ
+ภาพ Rich Menu และรูปโปรไฟล์อยู่ใน `public/rich-menu/` ใช้ endpoint เจ้าหน้าที่ `POST /api/admin/line/rich-menus` เพื่อสร้าง/อัปโหลดเมนูแบบ idempotent แล้วนำ Rich Menu ID ที่ได้ไปใส่ `LINE_RICH_MENU_*_ID` ใน environment ก่อนทดสอบการ link รายบุคคล
+
+Webhook ตรวจ `x-line-signature` ทุกครั้งและเก็บเฉพาะ metadata ที่จำเป็นเพื่อกัน event ซ้ำ ส่วน Vercel Cron เรียก `/api/jobs/reminders` เวลา 08:00 น. ประเทศไทยทุกวัน เพื่อส่งข้อความเตือนนัดวันถัดไปแบบไม่ส่งซ้ำ และเรียก `/api/jobs/mark-missed` รายชั่วโมงเพื่อตัดนัดที่เลยกำหนดของหน่วยบริการเป็น `missed` พร้อมสร้าง follow-up เพียงรายการเดียว (รันซ้ำได้โดยไม่สร้างซ้ำ)
 
 ## Deploy บน Vercel
 

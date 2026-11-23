@@ -19,10 +19,10 @@ export async function createUserClient() {
 
 export async function requireClinicalStaff() {
   const supabase = await createUserClient();
-  if (!supabase) return { mode: "demo" as const, userId: null };
+  if (!supabase) return { mode: "demo" as const, userId: null, serviceUnitId: null, role: null };
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("role, service_unit_id").eq("id", user.id).single();
   if (!profile || !["admin", "nurse"].includes(profile.role)) return null;
-  return { mode: "authenticated" as const, userId: user.id };
+  return { mode: "authenticated" as const, userId: user.id, serviceUnitId: profile.service_unit_id ?? null, role: profile.role as "admin" | "nurse" };
 }

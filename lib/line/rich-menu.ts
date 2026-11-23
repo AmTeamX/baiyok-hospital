@@ -70,8 +70,8 @@ export function buildRichMenuSpecs(baseUrl: string): RichMenuSpec[] {
     {
       kind: "default",
       name: "srkolo-default",
-      chatBarText: "เปิดเมนู",
-      areas: areas([{ type: "uri", uri: liffUrl(baseUrl, "/liff/link") }])
+      chatBarText: "ติดต่อเจ้าหน้าที่",
+      areas: areas([{ type: "uri", uri: `https://line.me/R/oaMessage/${process.env.NEXT_PUBLIC_LINE_OA_BASIC_ID ?? ""}` }])
     },
     {
       kind: "patient",

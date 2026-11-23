@@ -7,7 +7,9 @@ export function GET() {
     ok: config.mode === "database" || config.mode === "demo",
     mode: config.mode,
     readyForProduction: config.readyForProduction,
-    missingPublic: config.missingPublic,
-    missingServer: config.missingServer
+    requiredKeys: config.requiredKeys,
+    optionalKeys: config.optionalKeys,
+    missingRequired: config.missingRequired,
+    missingOptional: config.missingOptional
   });
 }

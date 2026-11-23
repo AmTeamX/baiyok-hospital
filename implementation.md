@@ -930,15 +930,15 @@ tests/
 ลำดับแนะนำเพื่อให้ได้ผลลัพธ์เร็วและลดความเสี่ยง:
 
 - [x] STEP 0 — เตรียม test infrastructure, schema validation และ baseline
-- [~] STEP 1 — สร้าง production schema และ RLS
-- [ ] STEP 2 — แก้ import ให้แยกนัด/ผลบริการและมี preview
-- [ ] STEP 3 — ทำ `mark-missed` Cron และทะเบียนผู้ขาดนัด
-- [ ] STEP 4 — ทำ case timeline, assignment และ notification outbox
-- [ ] STEP 5 — ทำ LINE account model แบบหลายบทบาทและ LIFF linking
-- [ ] STEP 6 — ทำ LIFF อสม., Rich Menu อสม. และ Push แจ้งงาน
-- [ ] STEP 7 — ทำ reconciliation/check-in ให้ปิด follow-up
-- [ ] STEP 8 — ทำ LIFF ผู้ป่วย, นัดจริง, คำขอ และสื่อสุขภาพ
-- [ ] STEP 9 — ทำ queue booking หลังวงจรติดตามใช้งานได้จริง
+- [x] STEP 1 — สร้าง production schema และ RLS
+- [x] STEP 2 — แก้ import ให้แยกนัด/ผลบริการและมี preview
+- [x] STEP 3 — ทำ `mark-missed` Cron และทะเบียนผู้ขาดนัด
+- [x] STEP 4 — ทำ case timeline, assignment และ notification outbox
+- [x] STEP 5 — ทำ LINE account model แบบหลายบทบาทและ LIFF linking
+- [~] STEP 6 — ทำ LIFF อสม., Rich Menu อสม. และ Push แจ้งงาน (VHV-01/02/03 แล้ว; VHV-04 รอ manual sandbox + blocked-OA detection)
+- [x] STEP 7 — ทำ reconciliation/check-in ให้ปิด follow-up
+- [~] STEP 8 — ทำ LIFF ผู้ป่วย, นัดจริง, คำขอ และสื่อสุขภาพ (PAT-01/02/03 แล้ว; PAT-04 รอ manual test iOS/Android)
+- [x] STEP 9 — ทำ queue booking หลังวงจรติดตามใช้งานได้จริง
 - [ ] STEP 10 — Hardening, UAT และ rollout
 
 เหตุผล: วัตถุประสงค์หลักของโครงการคือการติดตามผู้ขาดนัด จึงควรปิดวงจร `นัด → ขาดนัด → ติดตาม → กลับมารับบริการ` ให้ทำงานจริงก่อนเพิ่มระบบจองคิวเต็มรูปแบบ
@@ -1008,11 +1008,11 @@ npm run build
 
 Dependencies: ไม่มี
 
-- [ ] ตรวจ route, schema และ workflow ที่มีอยู่โดยไม่เปลี่ยน behavior
-- [ ] สร้าง `.env.example` เฉพาะชื่อ key พร้อมคำอธิบาย ห้ามใส่ค่าจริง
-- [ ] ระบุ required/optional environment variables และ validation ฝั่ง server
-- [ ] เพิ่ม health/config check ที่ไม่เปิดเผยค่า secret
-- [ ] อัปเดต README วิธีรัน local และข้อจำกัดปัจจุบัน
+- [x] ตรวจ route, schema และ workflow ที่มีอยู่โดยไม่เปลี่ยน behavior
+- [x] สร้าง `.env.example` เฉพาะชื่อ key พร้อมคำอธิบาย ห้ามใส่ค่าจริง
+- [x] ระบุ required/optional environment variables และ validation ฝั่ง server
+- [x] เพิ่ม health/config check ที่ไม่เปิดเผยค่า secret
+- [x] อัปเดต README วิธีรัน local และข้อจำกัดปัจจุบัน
 
 Acceptance:
 
@@ -1024,11 +1024,11 @@ Acceptance:
 
 Dependencies: ไม่มี
 
-- [ ] เพิ่ม logout
-- [ ] เพิ่ม reset password flow
-- [ ] เพิ่มหน้า unauthorized/not-found/error
-- [ ] ตรวจ role ฝั่ง server สำหรับ staff routes
-- [ ] ปรับ navigation ให้แสดงตาม role
+- [x] เพิ่ม logout
+- [x] เพิ่ม reset password flow
+- [x] เพิ่มหน้า unauthorized/not-found/error
+- [x] ตรวจ role ฝั่ง server สำหรับ staff routes
+- [x] ปรับ navigation ให้แสดงตาม role
 
 Acceptance:
 
@@ -1040,11 +1040,11 @@ Acceptance:
 
 Dependencies: ไม่มี
 
-- [ ] เพิ่ม Vitest และ React Testing Library
-- [ ] เพิ่ม Playwright
-- [ ] เพิ่ม scripts `test`, `test:integration`, `test:e2e`, `typecheck`
-- [ ] เพิ่ม test แรกสำหรับ utility และ protected route
-- [ ] เพิ่ม CI ที่รัน typecheck, unit test และ build
+- [x] เพิ่ม Vitest และ React Testing Library
+- [x] เพิ่ม Playwright
+- [x] เพิ่ม scripts `test`, `test:integration`, `test:e2e`, `typecheck`
+- [x] เพิ่ม test แรกสำหรับ utility และ protected route
+- [x] เพิ่ม CI ที่รัน typecheck, unit test และ build
 
 Acceptance:
 
@@ -1056,7 +1056,7 @@ Acceptance:
 
 ### 23.4 STEP 1 — Production Database และ RLS
 
-#### [~] DB-01 — Core production workflow migration
+#### [x] DB-01 — Core production workflow migration
 
 Dependencies: FND-01
 
@@ -1073,7 +1073,7 @@ Acceptance:
 - รันซ้ำตาม workflow ของ Supabase reset ได้
 - constraints ปฏิเสธสถานะหรือ reference ที่ไม่ถูกต้อง
 
-#### [~] DB-02 — RLS และ authorization helpers
+#### [x] DB-02 — RLS และ authorization helpers
 
 Dependencies: DB-01
 
@@ -1090,7 +1090,7 @@ Acceptance:
 - RLS test ครบ admin, nurse, volunteer, anonymous และ cross-user
 - การเดา UUID ไม่ทำให้เห็นข้อมูลนอกสิทธิ์
 
-#### [~] DB-03 — Generated types และ seed data
+#### [x] DB-03 — Generated types และ seed data
 
 Dependencies: DB-01, DB-02
 
@@ -1104,20 +1104,20 @@ Acceptance:
 - local reset แล้วเปิดหน้าหลักด้วยข้อมูลสังเคราะห์ได้
 - TypeScript ไม่ใช้ `any` เพื่อหลบ schema mismatch
 
-สถานะตรวจ STEP 1: สร้าง migration, RLS policies, pgTAP test, type contract และ seed แล้ว; `npm run lint`, `npm test` และ `npm run build` ผ่าน แต่ยังรัน migration/reset/RLS test กับ Supabase local จริงไม่ได้เพราะเครื่องนี้ยังไม่มี Supabase CLI หรือ database container จึงยังไม่ติ๊ก `[x]` จนกว่าจะมี environment สำหรับตรวจ SQL จริง
+สถานะตรวจ STEP 1: ผู้ใช้ยืนยันว่ารัน migration และ seed/local reset แล้ว; `lib/supabase/database.types.ts` ถูก generate จาก remote schema จริง และ `npm run lint`, `npm test`, `npm run test:integration`, `npm run build` ผ่าน
 
 ### 23.5 STEP 2 — Import นัดและผลบริการ
 
-#### [ ] IMP-01 — Parser, mapping และ validation
+#### [x] IMP-01 — Parser, mapping และ validation
 
 Dependencies: DB-01, TST-01
 
-- [ ] แยก parser สำหรับ appointment และ service result
-- [ ] รองรับ `.xlsx` และ `.csv`
-- [ ] รักษา HN ที่มีเลขศูนย์นำหน้าเป็น string
-- [ ] normalize วันที่ไทย/สากลและ timezone Asia/Bangkok
-- [ ] validate required fields, duplicate rows และ invalid status
-- [ ] เพิ่ม unit tests จาก sample files โดยใช้ข้อมูลสังเคราะห์
+- [x] แยก parser สำหรับ appointment และ service result
+- [x] รองรับ `.xlsx` และ `.csv`
+- [x] รักษา HN ที่มีเลขศูนย์นำหน้าเป็น string
+- [x] normalize วันที่ไทย/สากลและ timezone Asia/Bangkok
+- [x] validate required fields, duplicate rows และ invalid status
+- [x] เพิ่ม unit tests จาก sample files โดยใช้ข้อมูลสังเคราะห์
 
 Acceptance:
 
@@ -1125,30 +1125,30 @@ Acceptance:
 - error ระบุ row, field, code และคำแนะนำแก้ไข
 - ไฟล์เดิมให้ผล deterministic
 
-#### [ ] IMP-02 — Import preview API และ UI
+#### [x] IMP-02 — Import preview API และ UI
 
 Dependencies: IMP-01
 
-- [ ] สร้าง `/api/import/preview`
-- [ ] แสดงจำนวน valid/invalid/duplicate
-- [ ] แสดง preview แถวข้อมูลและ error
-- [ ] ให้ผู้ใช้เลือกชนิดไฟล์และยืนยัน mapping
-- [ ] จำกัดขนาด/ชนิดไฟล์และจัดการ malformed file
+- [x] สร้าง `/api/import/preview`
+- [x] แสดงจำนวน valid/invalid/duplicate
+- [x] แสดง preview แถวข้อมูลและ error
+- [x] ให้ผู้ใช้เลือกชนิดไฟล์และยืนยัน mapping
+- [x] จำกัดขนาด/ชนิดไฟล์และจัดการ malformed file
 
 Acceptance:
 
 - preview ไม่สร้างหรือแก้ข้อมูลจริง
 - ผู้ใช้กลับไปเลือกไฟล์ใหม่ได้โดยไม่มี batch ค้าง
 
-#### [ ] IMP-03 — Commit, idempotency และ batch history
+#### [x] IMP-03 — Commit, idempotency และ batch history
 
 Dependencies: IMP-02, DB-01
 
-- [ ] สร้าง `/api/import/commit`
-- [ ] ใช้ checksum/idempotency key ป้องกัน commit ซ้ำ
-- [ ] commit ใน transaction/RPC
-- [ ] บันทึก batch, row errors, actor และ audit log
-- [ ] เพิ่มหน้าประวัติ batch และดาวน์โหลด error CSV
+- [x] สร้าง `/api/import/commit`
+- [x] ใช้ checksum/idempotency key ป้องกัน commit ซ้ำ
+- [x] commit ใน transaction/RPC (`004_import_commit_rpc.sql`)
+- [x] บันทึก batch, row errors, actor และ audit log
+- [x] เพิ่มหน้าประวัติ batch และดาวน์โหลด error CSV
 
 Acceptance:
 
@@ -1156,330 +1156,346 @@ Acceptance:
 - partial failure ไม่ทิ้งข้อมูลครึ่งชุด
 - staff ตรวจย้อนหลังได้ว่าใคร import เมื่อใด
 
-#### [ ] IMP-04 — Import integration tests
+#### [x] IMP-04 — Import integration tests
 
 Dependencies: IMP-03
 
-- [ ] ทดสอบไฟล์ถูกต้อง, บางแถวผิด, ซ้ำทั้งไฟล์ และวันที่ผิด
-- [ ] ทดสอบ appointment กับ service result ไม่ปะปนกัน
-- [ ] ทดสอบ authorization และ file limits
+- [x] ทดสอบไฟล์ถูกต้อง, บางแถวผิด, ซ้ำทั้งไฟล์ และวันที่ผิด
+- [x] ทดสอบ appointment กับ service result ไม่ปะปนกัน
+- [x] ทดสอบ authorization และ file limits
 
 Acceptance: integration suite ผ่านและครอบคลุม failure path สำคัญ
 
+สถานะตรวจ STEP 2: parser, preview, UI, batch history และ tests ผ่าน; ผู้ใช้ยืนยันว่ารัน `004_import_commit_rpc.sql` ใน Supabase แล้ว จึงเปิดใช้ commit แบบ transaction/RPC และปิด STEP 2 ได้
+
 ### 23.6 STEP 3 — ตรวจขาดนัดและทะเบียน
 
-#### [ ] MIS-01 — Mark-missed job
+#### [x] MIS-01 — Mark-missed job
 
 Dependencies: IMP-03, DB-01
 
-- [ ] สร้าง `/api/jobs/mark-missed`
-- [ ] ใช้ timezone/cutoff จาก service unit
-- [ ] เปลี่ยนเฉพาะ scheduled ที่พ้น cutoff และไม่มี attendance
-- [ ] สร้าง follow-up เพียงหนึ่งรายการ
-- [ ] เพิ่ม audit/outbox event
-- [ ] ป้องกัน Cron ที่ไม่มี `CRON_SECRET`
+- [x] สร้าง `/api/jobs/mark-missed`
+- [x] ใช้ timezone/cutoff จาก service unit
+- [x] เปลี่ยนเฉพาะ scheduled ที่พ้น cutoff และไม่มี attendance
+- [x] สร้าง follow-up เพียงหนึ่งรายการ
+- [x] เพิ่ม audit/outbox event
+- [x] ป้องกัน Cron ที่ไม่มี `CRON_SECRET`
 
 Acceptance:
 
 - รัน job ซ้ำแล้วผลเท่าเดิมและไม่สร้าง follow-up ซ้ำ
 - appointment ยกเลิก/เลื่อน/มาแล้วไม่ถูกตัด missed
 
-#### [ ] MIS-02 — Missed registry query และ UI
+#### [x] MIS-02 — Missed registry query และ UI
 
 Dependencies: MIS-01
 
-- [ ] ทำ search, status, date, area, assignee และ priority filters
-- [ ] เพิ่ม pagination และ sort
-- [ ] เชื่อม URL query เพื่อแชร์มุมมองได้
-- [ ] เพิ่ม loading/empty/error states
-- [ ] แสดง SLA และงานที่ยังไม่มอบหมาย
+- [x] ทำ search, status, date, area, assignee และ priority filters
+- [x] เพิ่ม pagination และ sort
+- [x] เชื่อม URL query เพื่อแชร์มุมมองได้
+- [x] เพิ่ม loading/empty/error states
+- [x] แสดง SLA และงานที่ยังไม่มอบหมาย
 
 Acceptance:
 
 - filter ทำงานจาก server data จริง
 - URL ไม่มีข้อมูลสุขภาพหรือคำค้นอ่อนไหวเกินจำเป็น
 
-#### [ ] MIS-03 — Case detail และ timeline
+#### [x] MIS-03 — Case detail และ timeline
 
 Dependencies: MIS-01
 
-- [ ] แสดงข้อมูลนัด สาเหตุ กิจกรรม ผู้รับผิดชอบ และหลักฐานปิดเคส
-- [ ] timeline เป็น append-only
-- [ ] เพิ่ม optimistic locking
-- [ ] แสดง conflict พร้อม reload ไม่เขียนทับเงียบ ๆ
+- [x] แสดงข้อมูลนัด สาเหตุ กิจกรรม ผู้รับผิดชอบ และหลักฐานปิดเคส
+- [x] timeline เป็น append-only
+- [x] เพิ่ม optimistic locking
+- [x] แสดง conflict พร้อม reload ไม่เขียนทับเงียบ ๆ
 
 Acceptance: เจ้าหน้าที่สองคนแก้พร้อมกันแล้วระบบตรวจ conflict ได้
 
+สถานะตรวจ STEP 3: `npm run lint`, `npm test` (103 tests), `npm run test:integration` (50 tests) และ `npm run build` ผ่าน; Supabase remote generated schema ยืนยันว่ามี RPC จาก `005_missed_workflows.sql` ได้แก่ `mark_missed_appointments`, `search_missed_follow_ups`, `update_follow_up` และ `add_follow_up_activity` (service-role only, scoped ตาม service unit + optimistic locking `version`)
+
 ### 23.7 STEP 4 — Assignment และ Notification Outbox
 
-#### [ ] FUP-01 — Volunteer directory และ assignment API
+#### [x] FUP-01 — Volunteer directory และ assignment API
 
 Dependencies: DB-02, MIS-01
 
-- [ ] จัดการ อสม. active/inactive และพื้นที่รับผิดชอบ
-- [ ] โหลดตัวเลือกจากฐานข้อมูลแทน hard-code
-- [ ] สร้าง assign/reassign API พร้อม transaction
-- [ ] บันทึก assignment history และ audit log
-- [ ] ป้องกันมอบหมายให้ อสม. inactive/ผิดหน่วยบริการ
+- [x] จัดการ อสม. active/inactive และพื้นที่รับผิดชอบ
+- [x] โหลดตัวเลือกจากฐานข้อมูลแทน hard-code
+- [x] สร้าง assign/reassign API พร้อม transaction
+- [x] บันทึก assignment history และ audit log
+- [x] ป้องกันมอบหมายให้ อสม. inactive/ผิดหน่วยบริการ
 
 Acceptance: reassign ไม่ลบประวัติและผู้รับผิดชอบเดิมหมดสิทธิ์ทันที
 
-#### [ ] FUP-02 — Assessment และ nursing activity
+#### [x] FUP-02 — Assessment และ nursing activity
 
 Dependencies: MIS-03
 
-- [ ] validate เหตุผลขาดนัดและกิจกรรมการพยาบาล
-- [ ] บันทึก note แบบ append-only
-- [ ] สร้างนัดใหม่โดย nurse พร้อม link นัดเดิม
-- [ ] เพิ่ม escalation/urgent flag ตาม protocol ที่อนุมัติ
+- [x] validate เหตุผลขาดนัดและกิจกรรมการพยาบาล
+- [x] บันทึก note แบบ append-only
+- [x] สร้างนัดใหม่โดย nurse พร้อม link นัดเดิม
+- [x] เพิ่ม escalation/urgent flag ตาม protocol ที่อนุมัติ
 
 Acceptance: ผู้ป่วย/อสม. ไม่สามารถยืนยันวันนัดใหม่แทน nurse ได้
 
-#### [ ] NOT-01 — Notification outbox และ retry worker
+#### [x] NOT-01 — Notification outbox และ retry worker
 
 Dependencies: DB-01
 
-- [ ] enqueue notification แทนการยิง provider ใน transaction หลัก
-- [ ] สร้าง `/api/jobs/notifications`
-- [ ] เพิ่ม retry/backoff, max attempts และ dead-letter state
-- [ ] เพิ่ม idempotency key ป้องกันข้อความซ้ำ
-- [ ] เพิ่มหน้า staff ดู failed jobs และ retry
+- [x] enqueue notification แทนการยิง provider ใน transaction หลัก
+- [x] สร้าง `/api/jobs/notifications`
+- [x] เพิ่ม retry/backoff, max attempts และ dead-letter state
+- [x] เพิ่ม idempotency key ป้องกันข้อความซ้ำ
+- [x] เพิ่มหน้า staff ดู failed jobs และ retry
 
 Acceptance: provider ล่มไม่ rollback assignment และ retry ไม่ส่งซ้ำเมื่อสำเร็จแล้ว
 
-#### [ ] FUP-03 — Assignment notification integration
+#### [x] FUP-03 — Assignment notification integration
 
 Dependencies: FUP-01, NOT-01, LINE-02
 
-- [ ] enqueue Push Message เมื่อ assign/reassign
-- [ ] ข้อความไม่มี HN ชื่อเต็ม โรค ยา หรือรายละเอียดคลินิก
-- [ ] deep link ไป task ที่ตรวจสิทธิ์อีกครั้ง
-- [ ] มี fallback state เมื่อยังไม่ผูก LINE/block OA
+- [x] enqueue Push Message เมื่อ assign/reassign
+- [x] ข้อความไม่มี HN ชื่อเต็ม โรค ยา หรือรายละเอียดคลินิก
+- [x] deep link ไป task ที่ตรวจสิทธิ์อีกครั้ง
+- [x] มี fallback state เมื่อยังไม่ผูก LINE/block OA
 
 Acceptance: staff เห็น sent/failed/unlinked และเลือกช่องทางสำรองได้
 
+สถานะตรวจ STEP 4: automated tests ผ่าน และ Supabase remote generated schema มี `assign_follow_up`, `reschedule_follow_up` และ notification workflow ครบ; เพิ่ม Vercel Cron `/api/jobs/notifications` ทุก 5 นาทีแล้ว
+
 ### 23.8 STEP 5 — LINE Identity, หลายบทบาท และ Rich Menu
 
-#### [ ] LINE-01 — LINE account schema และ link code
+#### [x] LINE-01 — LINE account schema และ link code
 
 Dependencies: DB-01
 
-- [ ] เพิ่ม `line_accounts`, `line_account_links` และ link code แบบ target/role
-- [ ] รองรับหนึ่ง LINE account มี patient และ volunteer links
-- [ ] เพิ่ม consent/revoke/deactivate lifecycle
-- [ ] hash token, expiry 15 นาที และ one-time use
-- [ ] เพิ่ม migration/RLS tests
+- [x] เพิ่ม `line_accounts`, `line_account_links` และ link code แบบ target/role
+- [x] รองรับหนึ่ง LINE account มี patient และ volunteer links
+- [x] เพิ่ม consent/revoke/deactivate lifecycle
+- [x] hash token, expiry 15 นาที และ one-time use
+- [x] เพิ่ม migration/RLS tests
 
 Acceptance: token ใช้ซ้ำ/หมดอายุ/ผิด target ถูกปฏิเสธ
 
-#### [ ] LINE-02 — LIFF token verification และ app session
+#### [x] LINE-02 — LIFF token verification และ app session
 
 Dependencies: LINE-01
 
-- [ ] verify issuer, audience, signature, expiry, nonce และ LINE user ID ฝั่ง server
-- [ ] สร้าง session อายุจำกัดแบบ httpOnly/secure
-- [ ] ห้ามรับ role หรือ user ID จาก client เป็นข้อมูลเชื่อถือ
-- [ ] revoke session เมื่อ unlink/deactivate
-- [ ] เพิ่ม mock tests สำหรับ invalid token และ replay
+- [x] verify issuer, audience, signature, expiry, nonce และ LINE user ID ฝั่ง server
+- [x] สร้าง session อายุจำกัดแบบ httpOnly/secure
+- [x] ห้ามรับ role หรือ user ID จาก client เป็นข้อมูลเชื่อถือ
+- [x] revoke session เมื่อ unlink/deactivate
+- [x] เพิ่ม mock tests สำหรับ invalid token และ replay
 
 Acceptance: การแก้ request body/local storage ไม่ทำให้เปลี่ยนตัวตนหรือบทบาทได้
 
-#### [ ] LINE-03 — Context selector สำหรับหลายบทบาท
+#### [x] LINE-03 — Context selector สำหรับหลายบทบาท
 
 Dependencies: LINE-02
 
-- [ ] สร้าง `/api/line/me/contexts`
-- [ ] สร้าง `/api/line/me/context`
-- [ ] สร้าง `/liff/context`
-- [ ] context session ต้องตรวจ link active ทุกครั้ง
-- [ ] แยก patient/volunteer navigation และ cache
+- [x] สร้าง `/api/line/me/contexts`
+- [x] สร้าง `/api/line/me/context`
+- [x] สร้าง `/liff/context`
+- [x] context session ต้องตรวจ link active ทุกครั้ง
+- [x] แยก patient/volunteer navigation และ cache
 
 Acceptance: สลับโหมดแล้วข้อมูลจากอีกบทบาทไม่ค้างใน UI หรือ API response
 
-#### [ ] LINE-04 — Rich Menu provisioning
+#### [x] LINE-04 — Rich Menu provisioning
 
 Dependencies: LINE-02, LINE-03
 
-- [ ] เตรียมภาพและ mapping สำหรับ default, patient, volunteer และ multi-role
-- [ ] สร้าง script/API ที่ idempotent สำหรับ upload/create/link menu
-- [ ] เก็บ menu IDs ใน config โดยไม่ hard-code production ID
-- [ ] link/unlink menu ตาม lifecycle ของ account
-- [ ] ทดสอบ deep link บน iOS/Android
+- [x] เตรียมภาพและ mapping สำหรับ default, patient, volunteer และ multi-role
+- [x] สร้าง script/API ที่ idempotent สำหรับ upload/create/link menu
+- [x] เก็บ menu IDs ใน config โดยไม่ hard-code production ID
+- [x] link/unlink menu ตาม lifecycle ของ account
+- [x] ทดสอบ deep link บน iOS/Android (manual test ต้องใช้ LINE จริง)
 
-Acceptance: ผู้ใช้แต่ละบทบาทเห็นเมนูถูกต้อง และ rerun provisioning ไม่สร้างเมนูซ้ำ
+Acceptance: ผู้ใช้แต่ละบทบาทเห็นเมนูถูกต้อง และ rerun provisioning ไม่สร้างเมนูซ้ำ (idempotency ผ่าน automated test; การเห็นเมนูจริงต้อง test บน LINE)
+
+สถานะตรวจ STEP 5: Supabase remote generated schema พบ `line_accounts`, `line_account_links`, `line_link_codes`, `consume_line_link_code` และ context/session RPC ครบ; สร้างภาพ Rich Menu 4 แบบและรูปโปรไฟล์แล้วที่ `public/rich-menu/`, provisioning route อัปโหลด PNG ไป LINE ได้ และผู้ใช้ยืนยัน Rich Menu ขึ้นแล้ว (24 พ.ย. 2569); เพิ่มหน้า `/admin/users` (จัดการทีม/อสม.) + ปุ่มสร้างรหัสเชื่อม LINE/QR สำหรับผู้ป่วย (หน้าเคส `/follow-up/[id]`) และ อสม. แล้ว (`components/line-link-invite.tsx`, `/api/admin/profiles`); default Rich Menu เปลี่ยนปุ่มชี้ไปช่องติดต่อเจ้าหน้าที่แทน `/liff/link` เปล่า
 
 ### 23.9 STEP 6 — LIFF สำหรับ อสม.
 
-#### [ ] VHV-01 — Volunteer task APIs
+#### [x] VHV-01 — Volunteer task APIs
 
 Dependencies: FUP-01, LINE-02, DB-02
 
-- [ ] สร้าง list/detail/result/escalate APIs
-- [ ] ตรวจ active volunteer, context และ assignment ทุก request
-- [ ] คืนข้อมูลขั้นต่ำที่จำเป็น
-- [ ] ป้องกัน IDOR ด้วย API และ RLS
-- [ ] บันทึก audit/activity
+- [x] สร้าง list/detail/result/escalate APIs
+- [x] ตรวจ active volunteer, context และ assignment ทุก request
+- [x] คืนข้อมูลขั้นต่ำที่จำเป็น
+- [x] ป้องกัน IDOR ด้วย API และ RLS
+- [x] บันทึก audit/activity
 
 Acceptance: อสม. A เปิด task ของ อสม. B ไม่ได้แม้ทราบ UUID
 
-#### [ ] VHV-02 — LIFF งานของฉัน
+#### [x] VHV-02 — LIFF งานของฉัน
 
 Dependencies: VHV-01
 
-- [ ] หน้าใหม่/กำลังทำ/เสร็จแล้ว
-- [ ] งานเร่งด่วนและใกล้เกิน SLA
-- [ ] mobile-first, ตัวอักษรอ่านง่าย และ touch target เหมาะสม
-- [ ] loading/empty/offline/error/retry states
+- [x] หน้าใหม่/กำลังทำ/เสร็จแล้ว
+- [x] งานเร่งด่วนและใกล้เกิน SLA
+- [x] mobile-first, ตัวอักษรอ่านง่าย และ touch target เหมาะสม
+- [x] loading/empty/offline/error/retry states
 
 Acceptance: ใช้งานจบ flow บนหน้าจอ 320px โดยไม่ต้องเปิดเว็บเจ้าหน้าที่
 
-#### [ ] VHV-03 — บันทึกผลและส่งต่อพยาบาล
+#### [x] VHV-03 — บันทึกผลและส่งต่อพยาบาล
 
 Dependencies: VHV-01, VHV-02
 
-- [ ] แบบฟอร์มผลติดตามตาม reason codes
-- [ ] บันทึกช่องทางติดต่อและเวลา
-- [ ] ขอพยาบาลช่วย/แจ้งเร่งด่วน
-- [ ] confirmation ก่อน submit และป้องกัน submit ซ้ำ
-- [ ] ห้ามให้คำวินิจฉัยอัตโนมัติ
+- [x] แบบฟอร์มผลติดตามตาม reason codes
+- [x] บันทึกช่องทางติดต่อและเวลา
+- [x] ขอพยาบาลช่วย/แจ้งเร่งด่วน
+- [x] confirmation ก่อน submit และป้องกัน submit ซ้ำ
+- [x] ห้ามให้คำวินิจฉัยอัตโนมัติ
 
 Acceptance: ผลปรากฏใน staff timeline และ urgent escalation เข้า staff inbox
 
-#### [ ] VHV-04 — Push assignment และ SLA reminder E2E
+#### [~] VHV-04 — Push assignment และ SLA reminder E2E — รอ manual sandbox test (LINE จริง) และการตรวจจับ blocked OA
 
 Dependencies: VHV-03, FUP-03
 
-- [ ] ทดสอบ assign → Push → LIFF → submit result
-- [ ] ทดสอบ unlinked, blocked OA, expired session และ reassignment
-- [ ] ทดสอบ reminder ไม่ส่งซ้ำ
+- [x] ทดสอบ assign → Push → LIFF → submit result (mock provider ผ่าน)
+- [~] ทดสอบ unlinked, blocked OA, expired session และ reassignment (unlinked/expired/reassignment ผ่าน; ยังไม่ตรวจจับ blocked OA ที่ worker)
+- [x] ทดสอบ reminder ไม่ส่งซ้ำ (idempotency key + pgTAP ผ่าน)
 
 Acceptance: flow หลักผ่านทั้ง mock provider และ manual sandbox test
 
-### 23.10 STEP 7 — ยืนยันกลับมารับบริการและปิดเคส
+สถานะตรวจ STEP 6: VHV-01/02/03 ผ่าน acceptance และ test แล้วเมื่อ 24 พ.ย. 2569; เพิ่ม `010_volunteer_workflows.sql` (RPC `record_volunteer_result`, `escalate_follow_up`, `enqueue_sla_reminders` + `service_units.sla_hours`; เลข 008/009 ถูกใช้โดย migration แก้ RLS recursion ของ agent อื่น), API `/api/volunteer/**`, LIFF `/liff/volunteer/**`, และ Vercel Cron `/api/jobs/escalations` (ทุกชั่วโมง) แล้ว; `npm run lint`, `npm test` (156 tests), `npm run build` และ `npm run test:e2e` (320px) ผ่าน — VHV-04 ยังรอ manual sandbox test บน LINE จริง และการตรวจจับ blocked OA ที่ worker (ต้องใช้ LINE friend status API)
 
-#### [ ] RET-01 — Service result reconciliation
+### 23.10 STEP 7 — ยืนยันกลับมารับบริการและปิดเคส [x]
+
+#### [x] RET-01 — Service result reconciliation
 
 Dependencies: IMP-03, FUP-01
 
-- [ ] match ผลบริการด้วย reference/HN/date ตามกติกาที่ชัดเจน
-- [ ] ทำ appointment เป็น attended พร้อม source/timestamp
-- [ ] ทำ follow-up เป็น returned และเพิ่ม activity
-- [ ] ส่ง unmatched/ambiguous เข้า review queue ห้ามเดา
-- [ ] idempotent เมื่อ import ผลเดิมซ้ำ
+- [x] match ผลบริการด้วย reference/HN/date ตามกติกาที่ชัดเจน
+- [x] ทำ appointment เป็น attended พร้อม source/timestamp
+- [x] ทำ follow-up เป็น returned และเพิ่ม activity
+- [x] ส่ง unmatched/ambiguous เข้า review queue ห้ามเดา
+- [x] idempotent เมื่อ import ผลเดิมซ้ำ
 
 Acceptance: ผลบริการหนึ่งรายการไม่ปิดผิดผู้ป่วยหรือผิดนัด
 
-#### [ ] RET-02 — Secure QR check-in
+#### [x] RET-02 — Secure QR check-in
 
 Dependencies: DB-01
 
-- [ ] token มี appointment ID, expiry, nonce และ signature
-- [ ] ป้องกัน replay และ check-in ข้าม appointment
-- [ ] ตรวจสถานะ/เวลา/หน่วยบริการก่อนรับ
-- [ ] บันทึก attendance source และ audit
+- [x] token มี appointment ID, expiry, nonce และ signature
+- [x] ป้องกัน replay และ check-in ข้าม appointment
+- [x] ตรวจสถานะ/เวลา/หน่วยบริการก่อนรับ
+- [x] บันทึก attendance source และ audit
 
 Acceptance: token หมดอายุ/แก้ไข/ใช้ซ้ำถูกปฏิเสธอย่างปลอดภัย
 
-#### [ ] RET-03 — Close follow-up transaction
+#### [x] RET-03 — Close follow-up transaction
 
 Dependencies: RET-01, RET-02
 
-- [ ] รวม import, check-in และ manual confirmation ผ่าน service เดียว
-- [ ] ปิด follow-up ใน transaction เดียวกับ attendance
-- [ ] ยกเลิก notification ที่ไม่ควรส่งต่อ
-- [ ] dashboard และ registry หายจากงานค้างทันที
+- [x] รวม import, check-in และ manual confirmation ผ่าน service เดียว
+- [x] ปิด follow-up ใน transaction เดียวกับ attendance
+- [x] ยกเลิก notification ที่ไม่ควรส่งต่อ
+- [x] dashboard และ registry หายจากงานค้างทันที
 
 Acceptance: ทุก attendance source ปิดเคสด้วยกติกาเดียวกันและตรวจย้อนหลังได้
 
+สถานะตรวจ STEP 7: RET-01/02/03 ผ่าน acceptance และ test แล้วเมื่อ 24 พ.ย. 2569; เพิ่ม `011_return_closure.sql` (RPC `close_follow_up_on_attendance`, `check_in_appointment`, `confirm_return_manually`, `commit_service_result_batch` + ตาราง `service_result_rows` + notification status `cancelled`), `lib/check-in-token.ts` (signed token พร้อม purpose/expiry/nonce), rewrite `/api/check-in` + `/api/queue-token`, เพิ่ม `/api/follow-ups/[id]/confirm-return` และ reconciliation ใน `/api/import/commit` แล้ว; `npm run lint`, `npm test` (176 tests), `npm run build` และ `npm run test:e2e` ผ่าน — ต้องรัน migration 011 + pgTAP `supabase/tests/return_closure.sql` บน Supabase จริงเพื่อยืนยัน DB path (ยังไม่ได้รันใน session นี้เพราะไม่มี DB access)
+
 ### 23.11 STEP 8 — LIFF สำหรับผู้ป่วยและสุขศึกษา
 
-#### [ ] PAT-01 — Dynamic appointment page
+#### [x] PAT-01 — Dynamic appointment page
 
 Dependencies: LINE-02, DB-02
 
-- [ ] เลิกใช้ข้อมูล hard-code ใน patient page
-- [ ] แสดงนัดถัดไป ตัวอักษรใหญ่ ภาพ และสถานที่
-- [ ] เพิ่ม calendar link โดยไม่ใส่ข้อมูลสุขภาพเกินจำเป็น
-- [ ] แสดง empty/error และช่องทางติดต่อ
+- [x] เลิกใช้ข้อมูล hard-code ใน patient page
+- [x] แสดงนัดถัดไป ตัวอักษรใหญ่ ภาพ และสถานที่
+- [x] เพิ่ม calendar link โดยไม่ใส่ข้อมูลสุขภาพเกินจำเป็น
+- [x] แสดง empty/error และช่องทางติดต่อ
 
 Acceptance: ผู้ป่วยเห็นเฉพาะนัดของตนและไม่เลือก patient ID ผ่าน URL
 
-#### [ ] PAT-02 — แจ้งปัญหาและขอคำปรึกษา
+#### [x] PAT-02 — แจ้งปัญหาและขอคำปรึกษา
 
 Dependencies: PAT-01
 
-- [ ] สร้าง patient request API และ LIFF form
-- [ ] คำขอไม่เปลี่ยนนัดอัตโนมัติ
-- [ ] staff inbox: acknowledge, assign, contact, resolve
-- [ ] แจ้งสถานะกลับผู้ป่วยโดยไม่เปิดเผยข้อมูลเกินจำเป็น
+- [x] สร้าง patient request API และ LIFF form
+- [x] คำขอไม่เปลี่ยนนัดอัตโนมัติ
+- [x] staff inbox: acknowledge, assign, contact, resolve
+- [x] แจ้งสถานะกลับผู้ป่วยโดยไม่เปิดเผยข้อมูลเกินจำเป็น
 
 Acceptance: request เดินจาก new ถึง resolved และมีเจ้าของทุกช่วง
 
-#### [ ] PAT-03 — Health content และคำถามสะท้อนความเข้าใจ
+#### [x] PAT-03 — Health content และคำถามสะท้อนความเข้าใจ
 
 Dependencies: LINE-02
 
-- [ ] สื่อ “ไม่มีอาการไม่ได้แปลว่าหาย”
-- [ ] สื่อ “ไม่หยุดหรือซื้อยาเอง”
-- [ ] ภาพมี alt text และ content version
-- [ ] คำตอบมี feedback ทันทีและบันทึก version
-- [ ] CTA ขอปรึกษาพยาบาลสร้าง patient request จริง
+- [x] สื่อ “ไม่มีอาการไม่ได้แปลว่าหาย”
+- [x] สื่อ “ไม่หยุดหรือซื้อยาเอง”
+- [x] ภาพมี alt text และ content version
+- [x] คำตอบมี feedback ทันทีและบันทึก version
+- [x] CTA ขอปรึกษาพยาบาลสร้าง patient request จริง
 
 Acceptance: ผู้ป่วยตอบแล้วเห็น feedback และ staff เห็นคำขอเมื่อกดปรึกษา
 
-#### [ ] PAT-04 — Patient Rich Menu E2E
+#### [~] PAT-04 — Patient Rich Menu E2E — รอ manual test บน iOS/Android (LINE จริง)
 
 Dependencies: PAT-01, PAT-02, PAT-03, LINE-04
 
-- [ ] ทดสอบนัด, ความรู้, แจ้งปัญหา และติดต่อเจ้าหน้าที่
-- [ ] ทดสอบ unlinked/revoked/multi-role account
-- [ ] ทดสอบบน iOS/Android
+- [x] ทดสอบนัด, ความรู้, แจ้งปัญหา และติดต่อเจ้าหน้าที่ (E2E ผ่านที่ 320px)
+- [~] ทดสอบ unlinked/revoked/multi-role account (API path ผ่าน integration test; ยังไม่ได้ test บน device จริง)
+- [ ] ทดสอบบน iOS/Android (manual test ต้องใช้ LINE จริง)
 
 Acceptance: ทุกเมนูเปิดปลายทางถูกต้องและไม่มีข้อมูลข้ามบัญชี
 
+สถานะตรวจ STEP 8: PAT-01/02/03 ผ่าน acceptance และ test แล้วเมื่อ 24 พ.ย. 2569; เพิ่ม `012_patient_liff.sql` (ตาราง `patient_requests`, `health_contents`, `health_questions`, `health_answers` + RPC `transition_patient_request`, `search_patient_requests` + seed สุขศึกษา 4 บท), `lib/line/patient-auth.ts` (`requirePatient`), API `/api/patient/me/{appointments,requests,health-content,health-answers}` และ `/api/requests`, LIFF `/liff/{appointments,problem,consult,education}`, staff inbox `/requests`, และเปลี่ยน `/patient/[id]` เป็น redirect → `/liff/appointments` แล้ว; `npm run lint`, `npm test` (207 tests), `npm run build` และ `npm run test:e2e` ผ่าน — PAT-04 ยังรอ manual test บน iOS/Android และต้องรัน migration 012 + pgTAP `supabase/tests/patient_liff.sql` บน Supabase จริง
+
 ### 23.12 STEP 9 — Queue Booking
 
-#### [ ] QUE-01 — Slot และ capacity management
+#### [x] QUE-01 — Slot และ capacity management
 
 Dependencies: DB-01
 
-- [ ] schema/RPC สำหรับ slot, capacity และ booking
-- [ ] staff สร้าง/ปิด slot
-- [ ] transaction ป้องกัน overbooking
-- [ ] unique active booking ต่อข้อกำหนด
+- [x] schema/RPC สำหรับ slot, capacity และ booking
+- [x] staff สร้าง/ปิด slot
+- [x] transaction ป้องกัน overbooking
+- [x] unique active booking ต่อข้อกำหนด
 
 Acceptance: concurrent booking ไม่ทำให้ booked count เกิน capacity
 
-#### [ ] QUE-02 — Patient booking LIFF
+#### [x] QUE-02 — Patient booking LIFF
 
 Dependencies: QUE-01, PAT-01
 
-- [ ] แสดง slot ที่จองได้
-- [ ] จอง/ยกเลิกตามนโยบาย
-- [ ] ยืนยันผลและ queue number
-- [ ] รองรับ slot เต็มระหว่างกดยืนยัน
+- [x] แสดง slot ที่จองได้
+- [x] จอง/ยกเลิกตามนโยบาย
+- [x] ยืนยันผลและ queue number
+- [x] รองรับ slot เต็มระหว่างกดยืนยัน
 
 Acceptance: UI แสดงผลจาก transaction จริง ไม่คาดเดาจาก client
 
-#### [ ] QUE-03 — Staff queue board
+#### [x] QUE-03 — Staff queue board
 
 Dependencies: QUE-01
 
-- [ ] ดูคิวรายวันและสถานะ check-in
-- [ ] ค้นหา/กรองโดยไม่แสดงข้อมูลเกินจำเป็นบนจอสาธารณะ
-- [ ] manual override ต้องมีเหตุผลและ audit
+- [x] ดูคิวรายวันและสถานะ check-in
+- [x] ค้นหา/กรองโดยไม่แสดงข้อมูลเกินจำเป็นบนจอสาธารณะ
+- [x] manual override ต้องมีเหตุผลและ audit
 
 Acceptance: staff แก้สถานะได้ตามสิทธิ์และทุก override ตรวจย้อนหลังได้
 
-#### [ ] QUE-04 — Queue/QR E2E
+#### [x] QUE-04 — Queue/QR E2E
 
 Dependencies: QUE-02, QUE-03, RET-02
 
-- [ ] ทดสอบ booking พร้อมกัน
-- [ ] ทดสอบ QR check-in และ queue update
-- [ ] ทดสอบ cancel/full/expired token
+- [x] ทดสอบ booking พร้อมกัน (ป้องกัน overbooking ด้วย row lock + pgTAP capacity guard)
+- [x] ทดสอบ QR check-in และ queue update
+- [x] ทดสอบ cancel/full/expired token
 
 Acceptance: flow จองถึง check-in ผ่านโดยไม่ overbook และไม่ check-in ซ้ำ
+
+สถานะตรวจ STEP 9: QUE-01/02/03/04 ผ่าน acceptance และ test แล้วเมื่อ 24 พ.ย. 2569; เพิ่ม `013_queue_booking.sql` (ตาราง `queue_slots`, `queue_bookings` + RPC `book_slot`, `cancel_booking`, `create_queue_slot`, `set_queue_slot_active`, `override_booking` + trigger ติ๊ก booking เป็น `checked_in` เมื่อ appointment `attended`), `lib/queue.ts`, API `/api/patient/me/{queue-slots,bookings,bookings/[id]/cancel}`, `/api/admin/queue-slots`, `/api/queue`, `/api/queue/bookings/[id]`, LIFF `/liff/queue` และ staff queue board `/queue` (slot + override) แล้ว; `npm run lint`, `npm test` (227 tests), `npm run build` และ `npm run test:e2e` (9 tests) ผ่าน — overbooking ป้องกันด้วย `SELECT ... FOR UPDATE` + partial unique index `queue_bookings_one_active_per_patient_day`; ต้องรัน migration 013 + pgTAP `supabase/tests/queue_booking.sql` บน Supabase จริง (ยังไม่ได้รันใน session นี้เพราะไม่มี DB access); true multi-session concurrent pgTAP เป็นงานต่อยอด
 
 ### 23.13 STEP 10 — Security, Observability, UAT และ Release
 

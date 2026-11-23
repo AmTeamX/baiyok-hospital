@@ -11,7 +11,12 @@ const keys = [
   "LINE_CHANNEL_SECRET",
   "LINE_CHANNEL_ACCESS_TOKEN",
   "CHECKIN_SIGNING_SECRET",
-  "CRON_SECRET"
+  "CRON_SECRET",
+  "LIFF_SESSION_SECRET",
+  "LINE_RICH_MENU_DEFAULT_ID",
+  "LINE_RICH_MENU_PATIENT_ID",
+  "LINE_RICH_MENU_VOLUNTEER_ID",
+  "LINE_RICH_MENU_MULTIROLE_ID"
 ] as const;
 
 const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
@@ -29,7 +34,7 @@ describe("runtime configuration", () => {
     const config = getRuntimeConfig();
     expect(config.mode).toBe("demo");
     expect(config.readyForProduction).toBe(false);
-    expect(config.missingPublic).toContain("NEXT_PUBLIC_SUPABASE_URL");
+    expect(config.missingRequired).toContain("NEXT_PUBLIC_SUPABASE_URL");
   });
 
   it("does not report missing keys when production config is complete", () => {
@@ -37,7 +42,6 @@ describe("runtime configuration", () => {
     const config = getRuntimeConfig();
     expect(config.mode).toBe("database");
     expect(config.readyForProduction).toBe(true);
-    expect(config.missingPublic).toEqual([]);
-    expect(config.missingServer).toEqual([]);
+    expect(config.missingRequired).toEqual([]);
   });
 });
