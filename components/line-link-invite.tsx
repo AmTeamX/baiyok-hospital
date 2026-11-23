@@ -32,7 +32,13 @@ export function LineLinkInvite({ targetType, targetId, role, label }: Props) {
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "สร้างรหัสไม่สำเร็จ");
-      const url = `${window.location.origin}/liff/link?code=${encodeURIComponent(body.token)}&role=${role}`;
+      const code = encodeURIComponent(body.token);
+      const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+      // Use the LIFF URL so LINE preserves the query params (the direct endpoint
+      // URL gets opened via line://app/{liffId}, which drops code/role).
+      const url = liffId
+        ? `https://liff.line.me/${liffId}?code=${code}&role=${role}`
+        : `${window.location.origin}/liff/link?code=${code}&role=${role}`;
       const qr = await QRCode.toDataURL(url, { width: 320, margin: 1 });
       setResult({ url, qr });
     } catch (generateError) {
