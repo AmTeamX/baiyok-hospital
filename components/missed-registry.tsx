@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight, CircleAlert, LoaderCircle, RotateCcw, Search } from "lucide-react";
 import { DEFAULT_PAGE_SIZE, MISSED_PRIORITIES, parseMissedQuery, type MissedFilters, type MissedRow, type MissedStatus, type VolunteerOption } from "@/lib/missed";
+import { PatientTabs } from "@/components/patient-tabs";
 
 type RegistryResponse = {
   ok: boolean;
@@ -126,6 +127,8 @@ export function MissedRegistry() {
         </div>
         <span className="muted-count">{loading ? "กำลังโหลด…" : `${total} ราย`}</span>
       </div>
+
+      <PatientTabs />
 
       <section className="panel table-panel">
         <div className="registry-filters">

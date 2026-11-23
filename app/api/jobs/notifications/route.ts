@@ -41,6 +41,7 @@ export async function GET(request: Request) {
   let sent = 0;
   let failed = 0;
   let unlinked = 0;
+  let blocked = 0;
 
   for (const candidate of candidates) {
     const { data: claimed } = await supabase
@@ -64,6 +65,9 @@ export async function GET(request: Request) {
     } else if (result.status === "unlinked") {
       await supabase.from("notification_logs").update({ status: "unlinked", error_message: "recipient has no linked LINE account" }).eq("id", candidate.id);
       unlinked += 1;
+    } else if (result.status === "blocked") {
+      await supabase.from("notification_logs").update({ status: "blocked", error_message: result.errorMessage }).eq("id", candidate.id);
+      blocked += 1;
     } else {
       await supabase.from("notification_logs").update({
         status: result.status,
@@ -74,5 +78,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ processed: candidates.length, sent, failed, unlinked });
+  return NextResponse.json({ processed: candidates.length, sent, failed, unlinked, blocked });
 }

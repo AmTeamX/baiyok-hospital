@@ -1,10 +1,6 @@
-import { Suspense } from "react";
-import { MissedRegistry } from "@/components/missed-registry";
+import { redirect } from "next/navigation";
 
+// ย้ายทะเบียนผู้ขาดนัดไปเป็น sub-tab ใต้ "ผู้ป่วย" ที่ /patients/missed แล้ว
 export default function MissedPage() {
-  return (
-    <Suspense fallback={<div className="page-shell"><div className="state-banner" role="status">กำลังโหลด…</div></div>}>
-      <MissedRegistry />
-    </Suspense>
-  );
+  redirect("/patients/missed");
 }

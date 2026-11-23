@@ -1,3 +1,5 @@
+import { LinePushBlockedError } from "@/lib/line";
+
 export const MAX_NOTIFICATION_ATTEMPTS = 5;
 
 const BACKOFF_BASE_SECONDS = 5;
@@ -48,6 +50,7 @@ export function isUnlinkedRecipient(lineUserId?: string | null): boolean {
 
 export type DeliveryResult =
   | { status: "sent" }
+  | { status: "blocked"; errorMessage: string }
   | { status: "failed"; errorMessage: string; nextAttemptAt: string }
   | { status: "dead_letter"; errorMessage: string }
   | { status: "unlinked" };
@@ -68,6 +71,9 @@ export async function deliverNotification(
     return { status: "sent" };
   } catch (error) {
     const messageText = error instanceof Error ? error.message : "unknown error";
+    if (error instanceof LinePushBlockedError) {
+      return { status: "blocked", errorMessage: messageText };
+    }
     if (notification.attemptCountAfterClaim >= MAX_NOTIFICATION_ATTEMPTS) {
       return { status: "dead_letter", errorMessage: messageText };
     }

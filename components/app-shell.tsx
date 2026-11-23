@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardPlus, FileUp, HeartPulse, House, Inbox, LogOut, Menu, QrCode, Search, Users, UserCog, X, Bell } from "lucide-react";
+import { CalendarDays, ClipboardPlus, HeartPulse, House, Inbox, LogOut, Menu, QrCode, Search, Users, UserCog, X, Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const navigation = [
   { href: "/", label: "ภาพรวม", icon: House, roles: ["admin", "nurse"] },
-  { href: "/import", label: "นำเข้าข้อมูล", icon: FileUp, roles: ["admin", "nurse"] },
-  { href: "/missed", label: "ผู้ขาดนัด", icon: Users, roles: ["admin", "nurse"] },
+  { href: "/patients", label: "ผู้ป่วย", icon: Users, roles: ["admin", "nurse"] },
   { href: "/follow-up/demo", label: "บันทึกติดตาม", icon: ClipboardPlus, roles: ["admin", "nurse"] },
   { href: "/education", label: "สื่อสุขภาพ", icon: HeartPulse, roles: ["admin", "nurse"] },
   { href: "/notifications", label: "การแจ้งเตือน", icon: Bell, roles: ["admin", "nurse"] },

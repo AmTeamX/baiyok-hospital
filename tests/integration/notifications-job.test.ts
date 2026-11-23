@@ -7,9 +7,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({ hasSupabaseAdmin: mocks.hasSupabaseAdmin, createAdminClient: mocks.createAdminClient }));
-vi.mock("@/lib/line", () => ({ pushLineText: mocks.pushLineText }));
+vi.mock("@/lib/line", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/line")>("@/lib/line");
+  return { ...actual, pushLineText: mocks.pushLineText };
+});
 
 import { GET } from "@/app/api/jobs/notifications/route";
+import { LinePushBlockedError } from "@/lib/line";
 
 function chainable<T>(resolveTo: () => T) {
   const builder: Record<string, unknown> = {};
@@ -117,5 +121,22 @@ describe("GET /api/jobs/notifications", () => {
     const sentText = mocks.pushLineText.mock.calls[0][1];
     expect(sentText).toContain("ยังไม่มีผล");
     expect(sentText).not.toMatch(/HN|ชื่อ-นามสกุล|เบาหวาน|ความดัน|ยารักษา|คลินิก/);
+  });
+
+  it("marks a blocked recipient as blocked without retrying", async () => {
+    mocks.hasSupabaseAdmin.mockReturnValue(true);
+    mocks.pushLineText.mockRejectedValue(new LinePushBlockedError("The user has blocked or unfriended the bot"));
+    mocks.createAdminClient.mockReturnValue(queueSupabase([
+      () => ({ data: [candidate], error: null }),
+      () => ({ data: [{ profile_id: "v1", line_account_id: "la1" }], error: null }),
+      () => ({ data: [{ id: "la1", line_user_id: "U123" }], error: null }),
+      () => ({ data: { id: "n1" }, error: null }),
+      () => ({ data: null, error: null })
+    ]));
+
+    const response = await GET(authorizedRequest());
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ processed: 1, sent: 0, blocked: 1 });
   });
 });

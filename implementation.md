@@ -935,7 +935,7 @@ tests/
 - [x] STEP 3 — ทำ `mark-missed` Cron และทะเบียนผู้ขาดนัด
 - [x] STEP 4 — ทำ case timeline, assignment และ notification outbox
 - [x] STEP 5 — ทำ LINE account model แบบหลายบทบาทและ LIFF linking
-- [~] STEP 6 — ทำ LIFF อสม., Rich Menu อสม. และ Push แจ้งงาน (VHV-01/02/03 แล้ว; VHV-04 รอ manual sandbox + blocked-OA detection)
+- [~] STEP 6 — ทำ LIFF อสม., Rich Menu อสม. และ Push แจ้งงาน (VHV-01/02/03 แล้ว; VHV-04 รอ manual sandbox บน LINE จริง)
 - [x] STEP 7 — ทำ reconciliation/check-in ให้ปิด follow-up
 - [~] STEP 8 — ทำ LIFF ผู้ป่วย, นัดจริง, คำขอ และสื่อสุขภาพ (PAT-01/02/03 แล้ว; PAT-04 รอ manual test iOS/Android)
 - [x] STEP 9 — ทำ queue booking หลังวงจรติดตามใช้งานได้จริง
@@ -1166,7 +1166,7 @@ Dependencies: IMP-03
 
 Acceptance: integration suite ผ่านและครอบคลุม failure path สำคัญ
 
-สถานะตรวจ STEP 2: parser, preview, UI, batch history และ tests ผ่าน; ผู้ใช้ยืนยันว่ารัน `004_import_commit_rpc.sql` ใน Supabase แล้ว จึงเปิดใช้ commit แบบ transaction/RPC และปิด STEP 2 ได้
+สถานะตรวจ STEP 2: parser, preview, UI, batch history และ tests ผ่าน; ผู้ใช้ยืนยันว่ารัน `004_import_commit_rpc.sql` ใน Supabase แล้ว จึงเปิดใช้ commit แบบ transaction/RPC และปิด STEP 2 ได้; ภายหลังปรับสถาปัตยกรรมเป็น **patient-centric** (24 พ.ย. 2569): เพิ่ม `/patients` (ทะเบียนผู้ป่วย) + `/patients/[id]` (จัดการผู้ป่วย/เชื่อม LINE/นัด/เพิ่มนัด) + API `GET/PATCH /api/patients/[id]`, `POST /api/patients/[id]/appointments`, ย้าย "ผู้ขาดนัด/นำเข้า/เพิ่มรายบุคคล" เป็น sub-tab ใต้ "ผู้ป่วย" (`/patients/missed|import|add`) โดย `/missed*` เดิมเป็น redirect และแก้ reminder job ให้ resolve LINE จาก `line_account_links` แทน `patients.line_user_id` (deprecated)
 
 ### 23.6 STEP 3 — ตรวจขาดนัดและทะเบียน
 
@@ -1262,7 +1262,7 @@ Dependencies: FUP-01, NOT-01, LINE-02
 
 Acceptance: staff เห็น sent/failed/unlinked และเลือกช่องทางสำรองได้
 
-สถานะตรวจ STEP 4: automated tests ผ่าน และ Supabase remote generated schema มี `assign_follow_up`, `reschedule_follow_up` และ notification workflow ครบ; เพิ่ม Vercel Cron `/api/jobs/notifications` ทุก 5 นาทีแล้ว
+สถานะตรวจ STEP 4: automated tests ผ่าน และ Supabase remote generated schema มี `assign_follow_up`, `reschedule_follow_up` และ notification workflow ครบ; เพิ่ม Vercel Cron `/api/jobs/notifications` แล้ว (เดิมทุก 5 นาที → ปรับเป็นรายวันตาม Hobby plan limit) และใช้ GitHub Actions cron (`.github/workflows/cron.yml`) ยิง `/api/jobs/notifications` วันละ 3 ครั้ง (08:00/13:00/18:00 ไทย) เพื่อให้ push ไวขึ้นโดยไม่ต้องอัปเกรด plan
 
 ### 23.8 STEP 5 — LINE Identity, หลายบทบาท และ Rich Menu
 
@@ -1353,17 +1353,17 @@ Dependencies: VHV-01, VHV-02
 
 Acceptance: ผลปรากฏใน staff timeline และ urgent escalation เข้า staff inbox
 
-#### [~] VHV-04 — Push assignment และ SLA reminder E2E — รอ manual sandbox test (LINE จริง) และการตรวจจับ blocked OA
+#### [~] VHV-04 — Push assignment และ SLA reminder E2E — รอ manual sandbox test (LINE จริง)
 
 Dependencies: VHV-03, FUP-03
 
 - [x] ทดสอบ assign → Push → LIFF → submit result (mock provider ผ่าน)
-- [~] ทดสอบ unlinked, blocked OA, expired session และ reassignment (unlinked/expired/reassignment ผ่าน; ยังไม่ตรวจจับ blocked OA ที่ worker)
+- [x] ทดสอบ unlinked, blocked OA, expired session และ reassignment (blocked OA ตรวจจับที่ worker แล้ว ผ่าน `LinePushBlockedError`)
 - [x] ทดสอบ reminder ไม่ส่งซ้ำ (idempotency key + pgTAP ผ่าน)
 
 Acceptance: flow หลักผ่านทั้ง mock provider และ manual sandbox test
 
-สถานะตรวจ STEP 6: VHV-01/02/03 ผ่าน acceptance และ test แล้วเมื่อ 24 พ.ย. 2569; เพิ่ม `010_volunteer_workflows.sql` (RPC `record_volunteer_result`, `escalate_follow_up`, `enqueue_sla_reminders` + `service_units.sla_hours`; เลข 008/009 ถูกใช้โดย migration แก้ RLS recursion ของ agent อื่น), API `/api/volunteer/**`, LIFF `/liff/volunteer/**`, และ Vercel Cron `/api/jobs/escalations` (ทุกชั่วโมง) แล้ว; `npm run lint`, `npm test` (156 tests), `npm run build` และ `npm run test:e2e` (320px) ผ่าน — VHV-04 ยังรอ manual sandbox test บน LINE จริง และการตรวจจับ blocked OA ที่ worker (ต้องใช้ LINE friend status API)
+สถานะตรวจ STEP 6: VHV-01/02/03 ผ่าน acceptance และ test แล้วเมื่อ 24 พ.ย. 2569; เพิ่ม `010_volunteer_workflows.sql` (RPC `record_volunteer_result`, `escalate_follow_up`, `enqueue_sla_reminders` + `service_units.sla_hours`; เลข 008/009 ถูกใช้โดย migration แก้ RLS recursion ของ agent อื่น), API `/api/volunteer/**`, LIFF `/liff/volunteer/**`, และ Vercel Cron `/api/jobs/escalations` แล้ว; เพิ่ม blocked-OA detection (`014_blocked_oa.sql` + `lib/line.ts` `LinePushBlockedError`/`isLineBlocked` + worker ตั้งสถานะ `blocked`); `npm run lint`, `npm test` (242 tests), `npm run build` และ `npm run test:e2e` ผ่าน — VHV-04 เหลือรอ manual sandbox test บน LINE จริงเท่านั้น
 
 ### 23.10 STEP 7 — ยืนยันกลับมารับบริการและปิดเคส [x]
 

@@ -1,5 +1,6 @@
-import { ImportWorkspace } from "@/components/import-workspace";
+import { redirect } from "next/navigation";
 
+// การนำเข้าได้ย้ายไปเป็นหน้าย่อยของ "ผู้ป่วย" ที่ /patients/import แล้ว
 export default function ImportPage() {
-  return <div className="page-shell"><div className="page-heading"><div><p className="eyebrow">ข้อมูลบริการ</p><h1>นำเข้ารายการนัด</h1><p>รองรับ Excel และ CSV ระบบจะตรวจหัวตารางก่อนบันทึกทุกครั้ง</p></div></div><ImportWorkspace /></div>;
+  redirect("/patients/import");
 }

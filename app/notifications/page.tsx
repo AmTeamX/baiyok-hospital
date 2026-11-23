@@ -24,10 +24,11 @@ const statusLabel: Record<string, string> = {
   sent: "ส่งแล้ว",
   failed: "ส่งไม่สำเร็จ",
   dead_letter: "ส่งซ้ำไม่ได้",
-  unlinked: "ยังไม่ผูก LINE"
+  unlinked: "ยังไม่ผูก LINE",
+  blocked: "ถูกบล็อก"
 };
 
-const retryable = new Set(["failed", "dead_letter"]);
+const retryable = new Set(["failed", "dead_letter", "blocked"]);
 
 function thaiTime(value: string | null) {
   if (!value) return "—";

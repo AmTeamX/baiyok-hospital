@@ -9,6 +9,7 @@ import {
   nextAttemptAt,
   notificationBackoffSeconds
 } from "@/lib/notifications";
+import { LinePushBlockedError } from "@/lib/line";
 
 describe("notification helpers", () => {
   it("grows backoff exponentially and caps it", () => {
@@ -82,5 +83,12 @@ describe("deliverNotification", () => {
     const send = vi.fn().mockRejectedValue(new Error("LINE down"));
     const result = await deliverNotification({ ...base, attemptCountAfterClaim: MAX_NOTIFICATION_ATTEMPTS }, send);
     expect(result).toEqual({ status: "dead_letter", errorMessage: "LINE down" });
+  });
+
+  it("marks a blocked recipient as terminal without retrying", async () => {
+    const send = vi.fn().mockRejectedValue(new LinePushBlockedError("The user has blocked or unfriended the bot"));
+    const result = await deliverNotification({ ...base, attemptCountAfterClaim: 1 }, send);
+    expect(result).toEqual({ status: "blocked", errorMessage: "The user has blocked or unfriended the bot" });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });
