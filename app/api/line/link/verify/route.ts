@@ -46,10 +46,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "invalid_nonce" }, { status: 401 });
   }
 
-  // The ID token's signature, issuer, audience, expiry and nonce are verified server-side.
-  const verified = await verifyLiffIdToken(body.idToken, clientId, body.nonce);
+  // The ID token's signature, issuer, audience and expiry are verified server-side.
+  const verified = await verifyLiffIdToken(body.idToken, clientId);
   if (!verified.ok) {
-    return NextResponse.json({ ok: false, error: verified.reason }, { status: 401 });
+    return NextResponse.json({ ok: false, error: verified.reason, detail: verified.detail }, { status: 401 });
   }
 
   if (!hasSupabaseAdmin()) return NextResponse.json({ ok: false, error: "database_required" }, { status: 503 });

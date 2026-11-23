@@ -1,5 +1,5 @@
 import { QueueBoard } from "@/components/queue-board";
-import { QueueQr } from "@/components/queue-qr";
+import { QueueTabs } from "@/components/queue-tabs";
 
 export default function QueuePage() {
   return (
@@ -7,15 +7,12 @@ export default function QueuePage() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">บริการหน้าคลินิก</p>
-          <h1>จองคิวและเช็กอินด้วย QR</h1>
-          <p>จัดการ slot จองคิว ดูสถานะรายวัน และสร้าง QR เช็กอินเฉพาะนัด</p>
+          <h1>คิวบริการรายวัน</h1>
+          <p>เปิดช่วงเวลา ดูจำนวนจอง และยืนยันการมารับบริการในพื้นที่เดียว</p>
         </div>
       </div>
+      <QueueTabs />
       <QueueBoard />
-      <div style={{ marginBlockStart: "var(--space-xl)" }}>
-        <h2>สร้าง QR เช็กอิน</h2>
-        <QueueQr />
-      </div>
     </div>
   );
 }

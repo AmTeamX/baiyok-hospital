@@ -1,8 +1,8 @@
 {
-  "scanned_at": "2026-11-23",
-  "framework": "empty project -> Next.js 16 App Router",
+  "scanned_at": "2026-11-24",
+  "framework": "Next.js 16.4 App Router",
   "font": "Noto Sans Thai Variable",
-  "palette": "new Cobalt OKLCH tokens",
+  "palette": "Cobalt OKLCH tokens",
   "motion": "motion-cut",
   "spacing": "4pt scale"
 }

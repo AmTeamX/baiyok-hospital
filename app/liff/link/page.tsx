@@ -49,7 +49,10 @@ export default function LiffLinkPage() {
         body: JSON.stringify({ idToken, code, nonce: init.nonce })
       });
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "ผูกบัญชีไม่สำเร็จ");
+      if (!response.ok) {
+        const reason = body.detail ? `${body.error}: ${body.detail}` : (body.error ?? "ผูกบัญชีไม่สำเร็จ");
+        throw new Error(reason);
+      }
 
       setPhase("success");
     } catch (error) {

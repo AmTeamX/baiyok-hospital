@@ -10,39 +10,35 @@ function claims(overrides: Partial<LiffIdTokenClaims> = {}): LiffIdTokenClaims {
     sub: "U123456789",
     aud: clientId,
     exp: Math.floor(now / 1000) + 3600,
-    nonce: "server-nonce",
     ...overrides
   };
 }
 
 describe("validateLiffClaims", () => {
   it("accepts a valid set of claims", () => {
-    const result = validateLiffClaims(claims(), { clientId, nonce: "server-nonce", nowMs: now });
+    const result = validateLiffClaims(claims(), { clientId, nowMs: now });
     expect(result).toEqual({ ok: true, lineUserId: "U123456789", claims: claims() });
   });
 
   it("rejects a wrong issuer", () => {
-    expect(validateLiffClaims(claims({ iss: "https://evil.example" }), { clientId, nonce: "server-nonce", nowMs: now })).toEqual({ ok: false, reason: "invalid_issuer" });
+    expect(validateLiffClaims(claims({ iss: "https://evil.example" }), { clientId, nowMs: now })).toEqual({ ok: false, reason: "invalid_issuer" });
   });
 
   it("rejects a wrong audience", () => {
-    expect(validateLiffClaims(claims({ aud: "another-liff" }), { clientId, nonce: "server-nonce", nowMs: now })).toEqual({ ok: false, reason: "invalid_audience" });
+    const result = validateLiffClaims(claims({ aud: "another-liff" }), { clientId, nowMs: now });
+    expect(result).toMatchObject({ ok: false, reason: "invalid_audience" });
   });
 
   it("rejects an expired token", () => {
-    expect(validateLiffClaims(claims({ exp: Math.floor(now / 1000) - 1 }), { clientId, nonce: "server-nonce", nowMs: now })).toEqual({ ok: false, reason: "expired" });
-  });
-
-  it("rejects a nonce mismatch (replay/CSRF)", () => {
-    expect(validateLiffClaims(claims({ nonce: "different" }), { clientId, nonce: "server-nonce", nowMs: now })).toEqual({ ok: false, reason: "invalid_nonce" });
+    expect(validateLiffClaims(claims({ exp: Math.floor(now / 1000) - 1 }), { clientId, nowMs: now })).toEqual({ ok: false, reason: "expired" });
   });
 
   it("rejects a missing subject", () => {
-    expect(validateLiffClaims(claims({ sub: "" }), { clientId, nonce: "server-nonce", nowMs: now })).toEqual({ ok: false, reason: "missing_sub" });
+    expect(validateLiffClaims(claims({ sub: "" }), { clientId, nowMs: now })).toEqual({ ok: false, reason: "missing_sub" });
   });
 
   it("rejects malformed/null claims", () => {
-    expect(validateLiffClaims(null, { clientId, nonce: "server-nonce", nowMs: now })).toEqual({ ok: false, reason: "malformed" });
+    expect(validateLiffClaims(null, { clientId, nowMs: now })).toEqual({ ok: false, reason: "malformed" });
   });
 });
 
@@ -53,13 +49,14 @@ describe("verifyLiffIdToken", () => {
 
   it("returns the verified user when LINE accepts the token", async () => {
     const valid = claims({ exp: Math.floor(Date.now() / 1000) + 3600 });
-    const result = await verifyLiffIdToken("id-token", clientId, "server-nonce", mockFetch(200, valid));
+    const result = await verifyLiffIdToken("id-token", clientId, mockFetch(200, valid));
     expect(result).toEqual({ ok: true, lineUserId: "U123456789", claims: valid });
   });
 
-  it("rejects an invalid signature (LINE returns 400)", async () => {
-    const result = await verifyLiffIdToken("bad-token", clientId, "server-nonce", mockFetch(400, { error: "invalid_grant" }));
-    expect(result).toEqual({ ok: false, reason: "malformed" });
+  it("rejects an invalid signature and surfaces LINE's response", async () => {
+    const result = await verifyLiffIdToken("bad-token", clientId, mockFetch(400, { error: "invalid_grant" }));
+    expect(result).toMatchObject({ ok: false, reason: "malformed" });
+    expect(result.ok === false && result.detail).toContain("400");
   });
 
   it("posts the id_token and client_id to LINE's verify endpoint", async () => {
@@ -71,7 +68,7 @@ describe("verifyLiffIdToken", () => {
       return new Response(JSON.stringify(claims()), { status: 200 });
     }) as unknown as typeof fetch;
 
-    await verifyLiffIdToken("id-token", clientId, "server-nonce", fetchImpl);
+    await verifyLiffIdToken("id-token", clientId, fetchImpl);
     expect(capturedUrl).toBe(LINE_VERIFY_URL);
     expect(capturedBody).toContain("id_token=id-token");
     expect(capturedBody).toContain(`client_id=${clientId}`);

@@ -16,24 +16,23 @@ export type LiffVerifyError =
   | "invalid_issuer"
   | "invalid_audience"
   | "expired"
-  | "invalid_nonce"
   | "missing_sub"
   | "malformed";
 
 export type LiffValidationResult =
   | { ok: true; lineUserId: string; claims: LiffIdTokenClaims }
-  | { ok: false; reason: LiffVerifyError };
+  | { ok: false; reason: LiffVerifyError; detail?: string };
 
 export type LiffValidationOptions = {
   clientId: string;
-  nonce?: string;
   nowMs?: number;
 };
 
 /**
  * Server-side validation of a LIFF ID token's claims. The cryptographic signature is
- * verified by LINE when we call the `/verify` endpoint (see `verifyLiffIdToken`);
- * this function enforces the non-cryptographic claims that LINE's response must satisfy.
+ * verified by LINE when we call the `/verify` endpoint (see `verifyLiffIdToken`).
+ * Replay protection is handled separately via the nonce cookie, not via the ID token
+ * (LIFF ID tokens do not carry a nonce that matches our server nonce).
  */
 export function validateLiffClaims(
   claims: Partial<LiffIdTokenClaims> | null,
@@ -42,17 +41,15 @@ export function validateLiffClaims(
   const nowMs = options.nowMs ?? Date.now();
   if (!claims) return { ok: false, reason: "malformed" };
   if (claims.iss !== LINE_ISSUER) return { ok: false, reason: "invalid_issuer" };
-  if (claims.aud !== options.clientId) return { ok: false, reason: "invalid_audience" };
+  if (claims.aud !== options.clientId) return { ok: false, reason: "invalid_audience", detail: `aud=${claims.aud} expected=${options.clientId}` };
   if (typeof claims.exp !== "number" || claims.exp <= nowMs / 1000) return { ok: false, reason: "expired" };
   if (typeof claims.sub !== "string" || claims.sub.length === 0) return { ok: false, reason: "missing_sub" };
-  if (options.nonce !== undefined && claims.nonce !== options.nonce) return { ok: false, reason: "invalid_nonce" };
   return { ok: true, lineUserId: claims.sub, claims: claims as LiffIdTokenClaims };
 }
 
 export async function verifyLiffIdToken(
   idToken: string,
   clientId: string,
-  nonce: string | undefined,
   fetchImpl: typeof fetch = fetch
 ): Promise<LiffValidationResult> {
   const body = new URLSearchParams({ id_token: idToken, client_id: clientId });
@@ -63,10 +60,18 @@ export async function verifyLiffIdToken(
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: body.toString()
     });
-  } catch {
-    return { ok: false, reason: "malformed" };
+  } catch (error) {
+    return { ok: false, reason: "malformed", detail: error instanceof Error ? error.message : "network error" };
   }
-  if (!response.ok) return { ok: false, reason: "malformed" };
+  if (!response.ok) {
+    let detail = `LINE verify returned ${response.status}`;
+    try {
+      detail += `: ${await response.text()}`;
+    } catch {
+      // ignore
+    }
+    return { ok: false, reason: "malformed", detail };
+  }
   const claims = (await response.json()) as Partial<LiffIdTokenClaims> | null;
-  return validateLiffClaims(claims, { clientId, nonce });
+  return validateLiffClaims(claims, { clientId });
 }

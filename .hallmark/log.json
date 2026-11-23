@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-11-24",
+    "macrostructure": "Enterprise Workbench",
+    "theme": "Cobalt",
+    "enrichment": "operational navigation and command palette",
+    "brief": "enterprise UX restructure for staff operations",
+    "nav": "grouped side rail",
+    "footer": "none in authenticated workspace"
+  },
+  {
     "date": "2026-11-23",
     "macrostructure": "Workbench",
     "theme": "Cobalt",
