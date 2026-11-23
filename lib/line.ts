@@ -11,14 +11,16 @@ export class LinePushBlockedError extends Error {
  * (HTTP 400 "Failed to send messages" or 404 "Not found"), so the caller can
  * stop retrying and surface the blocked state to staff.
  */
-export async function pushLineText(lineUserId: string, text: string) {
+export async function pushLineText(lineUserId: string, text: string, retryKey?: string) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!token) throw new Error("LINE_CHANNEL_ACCESS_TOKEN is not configured");
   const response = await fetch("https://api.line.me/v2/bot/message/push", {
     method: "POST",
-    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify({ to: lineUserId, messages: [{ type: "text", text }] })
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json", ...(retryKey ? { "X-Line-Retry-Key": retryKey } : {}) },
+    body: JSON.stringify({ to: lineUserId, messages: [{ type: "text", text }], notificationDisabled: false }),
+    signal: AbortSignal.timeout(8000)
   });
+  if (response.status === 409 && response.headers.get("x-line-accepted-request-id")) return;
   if (!response.ok) {
     let message = "";
     try {

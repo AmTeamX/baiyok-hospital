@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
+import { dispatchNotifications } from "@/lib/notification-dispatch";
 
 export const runtime = "nodejs";
 
@@ -76,5 +77,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
   }
 
+  if (status === "missed") {
+    try { await dispatchNotifications({ appointmentId: appointment.id }); } catch { /* Retry from the outbox. */ }
+  }
   return NextResponse.json({ ok: true, mode: "database", appointmentId: appointment.id, status });
 }

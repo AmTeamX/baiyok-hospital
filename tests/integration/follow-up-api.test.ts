@@ -28,6 +28,22 @@ beforeEach(() => {
 });
 
 describe("GET /api/follow-ups/[id]", () => {
+  it.each(["object", "array"])("opens a real case when the related patient is returned as an %s", async (shape) => {
+    mocks.requireClinicalStaff.mockResolvedValue(staff);
+    mocks.hasSupabaseAdmin.mockReturnValue(true);
+    const patient = { id: "patient-1", hn: "00123", full_name: "ผู้ป่วยทดสอบ", birth_date: null, village: "หมู่ 1", phone: null, service_unit_id: "unit-1" };
+    mocks.createAdminClient.mockReturnValue({ from: (table: string) => {
+      const data = table === "follow_ups" ? { id: followUpId, appointment_id: "appt-1", status: "assigned", priority: "normal", assigned_volunteer_id: null, version: 1 } : table === "appointments" ? { id: "appt-1", appointment_at: "2026-11-24T01:00:00Z", clinic: "คลินิกทดสอบ", patients: shape === "object" ? patient : [patient] } : [];
+      const chain: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "order", "in", "limit"]) chain[method] = () => chain;
+      chain.maybeSingle = chain.single = async () => ({ data, error: null });
+      chain.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve);
+      return chain;
+    } });
+    const response = await GET(new Request(`http://localhost/api/follow-ups/${followUpId}`), params());
+    expect(response.status).toBe(200);
+    expect((await response.json()).followUp.patient.fullName).toBe("ผู้ป่วยทดสอบ");
+  });
   it("rejects unauthenticated callers", async () => {
     mocks.requireClinicalStaff.mockResolvedValue(null);
     const response = await GET(new Request("http://localhost/api/follow-ups/x"), params());

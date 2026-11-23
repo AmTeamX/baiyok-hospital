@@ -15,7 +15,7 @@ type AppointmentWithPatient = {
   status: string;
   missed_marked_at: string | null;
   patient_id: string;
-  patients: Array<{ id: string; hn: string; full_name: string; birth_date: string | null; village: string | null; phone: string | null; service_unit_id: string | null }>;
+  patients: { id: string; hn: string; full_name: string; birth_date: string | null; village: string | null; phone: string | null; service_unit_id: string | null } | Array<{ id: string; hn: string; full_name: string; birth_date: string | null; village: string | null; phone: string | null; service_unit_id: string | null }>;
 };
 
 async function getFollowUpDetail(supabase: ReturnType<typeof createAdminClient>, id: string, serviceUnitId: string): Promise<FollowUpDetail | null> {
@@ -31,7 +31,8 @@ async function getFollowUpDetail(supabase: ReturnType<typeof createAdminClient>,
     followUp.assigned_volunteer_id ? supabase.from("profiles").select("id, full_name").eq("id", followUp.assigned_volunteer_id).maybeSingle() : Promise.resolve({ data: null })
   ]);
 
-  const patient = (appointment as AppointmentWithPatient | null)?.patients?.[0] ?? null;
+  const relatedPatient = (appointment as AppointmentWithPatient | null)?.patients;
+  const patient = Array.isArray(relatedPatient) ? relatedPatient[0] ?? null : relatedPatient ?? null;
   if (patient?.service_unit_id !== serviceUnitId) return null;
 
   const performerIds = [...new Set((activities ?? []).map((activity) => activity.performed_by).filter((value): value is string => Boolean(value)))];

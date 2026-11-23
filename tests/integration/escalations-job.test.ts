@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   hasSupabaseAdmin: vi.fn(),
-  createAdminClient: vi.fn()
+  createAdminClient: vi.fn(),
+  dispatchNotifications: vi.fn()
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({ hasSupabaseAdmin: mocks.hasSupabaseAdmin, createAdminClient: mocks.createAdminClient }));
+vi.mock("@/lib/notification-dispatch", () => ({ dispatchNotifications: mocks.dispatchNotifications }));
 
 import { GET } from "@/app/api/jobs/escalations/route";
 
@@ -16,6 +18,7 @@ function authorizedRequest() {
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.CRON_SECRET = "secret";
+  mocks.dispatchNotifications.mockResolvedValue({ processed: 3, sent: 3, failed: 0, unlinked: 0, blocked: 0 });
 });
 
 describe("GET /api/jobs/escalations", () => {
@@ -39,6 +42,7 @@ describe("GET /api/jobs/escalations", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ enqueued: 3 });
     expect(rpc).toHaveBeenCalledWith("enqueue_sla_reminders");
+    expect(mocks.dispatchNotifications).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces an RPC error as a 500", async () => {

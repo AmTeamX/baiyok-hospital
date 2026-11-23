@@ -42,6 +42,17 @@ beforeEach(() => {
 });
 
 describe("GET /api/jobs/notifications", () => {
+  it("does not push when another worker has already claimed the notification", async () => {
+    mocks.hasSupabaseAdmin.mockReturnValue(true);
+    mocks.createAdminClient.mockReturnValue(queueSupabase([
+      () => ({ data: [candidate], error: null }),
+      () => ({ data: [{ profile_id: "v1", line_account_id: "la1" }], error: null }),
+      () => ({ data: [{ id: "la1", line_user_id: "U123" }], error: null }),
+      () => ({ data: null, error: null })
+    ]));
+    expect((await GET(authorizedRequest())).status).toBe(200);
+    expect(mocks.pushLineText).not.toHaveBeenCalled();
+  });
   it("rejects callers without the cron secret", async () => {
     const response = await GET(new Request("http://localhost/api/jobs/notifications", { headers: { authorization: "Bearer wrong" } }));
     expect(response.status).toBe(401);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
+import { dispatchNotifications } from "@/lib/notification-dispatch";
 
 export const runtime = "nodejs";
 
@@ -40,5 +41,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, error: "มอบหมายไม่สำเร็จ" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, mode: "database", ...(data as Record<string, unknown>) });
+  let delivery = null;
+  try { delivery = await dispatchNotifications({ recipientProfileId: volunteerId }); }
+  catch { /* Pending messages remain in the outbox. */ }
+  return NextResponse.json({ ok: true, mode: "database", ...(data as Record<string, unknown>), delivery });
 }

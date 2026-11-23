@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requireClinicalStaff: vi.fn(),
   hasSupabaseAdmin: vi.fn(),
-  createAdminClient: vi.fn()
+  createAdminClient: vi.fn(),
+  dispatchNotifications: vi.fn()
 }));
 
 vi.mock("@/lib/supabase/server", () => ({ requireClinicalStaff: mocks.requireClinicalStaff }));
 vi.mock("@/lib/supabase/admin", () => ({ hasSupabaseAdmin: mocks.hasSupabaseAdmin, createAdminClient: mocks.createAdminClient }));
+vi.mock("@/lib/notification-dispatch", () => ({ dispatchNotifications: mocks.dispatchNotifications }));
 
 import { POST } from "@/app/api/follow-ups/[id]/assign/route";
 
@@ -27,9 +29,19 @@ const params = Promise.resolve({ id: followUpId });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.dispatchNotifications.mockResolvedValue({ processed: 1, sent: 1, failed: 0, unlinked: 0, blocked: 0 });
 });
 
 describe("POST /api/follow-ups/[id]/assign", () => {
+  it("preserves the assignment and pending delivery if immediate dispatch fails", async () => {
+    mocks.requireClinicalStaff.mockResolvedValue({ mode: "authenticated", userId: actorId, serviceUnitId: "unit-1" });
+    mocks.hasSupabaseAdmin.mockReturnValue(true);
+    mocks.createAdminClient.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: { follow_up_id: followUpId, volunteer_id: volunteerId, notification_id: "n1", notification_status: "pending" }, error: null }) });
+    mocks.dispatchNotifications.mockRejectedValueOnce(new Error("network unavailable"));
+    const response = await POST(request({ volunteer_id: volunteerId }), { params });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, notification_status: "pending" });
+  });
   it("rejects unauthenticated callers", async () => {
     mocks.requireClinicalStaff.mockResolvedValue(null);
     const response = await POST(request({ volunteer_id: volunteerId }), { params });
@@ -57,7 +69,8 @@ describe("POST /api/follow-ups/[id]/assign", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.ok).toBe(true);
-    expect(body.notification_status).toBe("pending");
+    expect(body.notification_status).toBe("sent");
+    expect(mocks.dispatchNotifications).toHaveBeenCalledWith({ notificationId: "n1" });
     expect(rpc).toHaveBeenCalledWith("assign_follow_up", { p_follow_up_id: followUpId, p_volunteer_id: volunteerId, p_actor_id: actorId });
   });
 

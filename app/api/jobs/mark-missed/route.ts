@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
+import { dispatchNotifications } from "@/lib/notification-dispatch";
 
 export const runtime = "nodejs";
 
@@ -16,5 +17,6 @@ export async function GET(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const result = data as { marked?: number; follow_ups_created?: number; at?: string };
+  try { await dispatchNotifications(); } catch { /* The outbox retains pending assignments. */ }
   return NextResponse.json({ marked: result.marked ?? 0, followUpsCreated: result.follow_ups_created ?? 0, at: result.at ?? null });
 }

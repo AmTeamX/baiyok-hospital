@@ -28,7 +28,7 @@ export default function LiffLinkPage() {
         if (linkedContexts.length > 0) {
           const destination = params.get("destination");
           const allowed = ["appointments", "education", "problem", "consult", "volunteer", "volunteer/contact-nurse", "context"];
-          if (destination && allowed.includes(destination)) {
+          if (destination && (allowed.includes(destination) || /^volunteer\/tasks\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(destination))) {
             const role = destination.startsWith("volunteer") ? "volunteer" : "patient";
             const context = linkedContexts.find((item) => item.role === role);
             if (destination !== "context" && context) {

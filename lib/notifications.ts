@@ -17,7 +17,9 @@ export function nextAttemptAt(attemptCount: number, now = new Date()): string {
 
 /** Deep link to the volunteer LIFF task. The target re-checks assignment authorization. */
 export function assignmentDeepLink(followUpId: string, appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ""): string {
-  return `${appUrl.replace(/\/+$/, "")}/liff/volunteer/tasks/${followUpId}`;
+  const destination = encodeURIComponent(`volunteer/tasks/${followUpId}`);
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  return liffId ? `https://liff.line.me/${liffId}?destination=${destination}` : `${appUrl.replace(/\/+$/, "")}/liff/link?destination=${destination}`;
 }
 
 /**

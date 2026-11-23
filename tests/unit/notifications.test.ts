@@ -26,7 +26,9 @@ describe("notification helpers", () => {
   });
 
   it("builds a clean deep link", () => {
-    expect(assignmentDeepLink("abc-123", "https://app.example/")).toBe("https://app.example/liff/volunteer/tasks/abc-123");
+    vi.stubEnv("NEXT_PUBLIC_LIFF_ID", "123-app");
+    expect(assignmentDeepLink("abc-123", "https://app.example/")).toBe("https://liff.line.me/123-app?destination=volunteer%2Ftasks%2Fabc-123");
+    vi.unstubAllEnvs();
   });
 
   it("keeps the push message free of protected health information", () => {

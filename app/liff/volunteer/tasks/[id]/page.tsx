@@ -10,6 +10,7 @@ import {
   VOLUNTEER_RESULT_CODES,
   VOLUNTEER_RESULT_LABELS,
   resultCodeEscalates,
+  volunteerLoadErrorMessage,
   type VolunteerChannel,
   type VolunteerResultCode
 } from "@/lib/volunteer";
@@ -19,7 +20,8 @@ type TaskDetail = VolunteerTaskItem & { version: number };
 
 function thaiDate(value: string | null) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("th-TH", { dateStyle: "full", timeZone: "Asia/Bangkok" }).format(new Date(value));
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "ไม่ระบุวันนัด" : new Intl.DateTimeFormat("th-TH", { dateStyle: "full", timeZone: "Asia/Bangkok" }).format(date);
 }
 
 export default function VolunteerTaskDetailPage() {
@@ -39,16 +41,23 @@ export default function VolunteerTaskDetailPage() {
   const [done, setDone] = useState<"result" | "escalated" | null>(null);
 
   const load = useCallback(async () => {
+    if (!id) return;
     setPhase("loading");
     try {
       const response = await fetch(`/api/volunteer/tasks/${id}`);
       const body = await response.json();
+      if (response.status === 401 || (response.status === 403 && body.error === "context_required")) {
+        window.location.replace(`/liff/link?destination=${encodeURIComponent(`volunteer/tasks/${id}`)}`);
+        return;
+      }
       if (!response.ok) throw new Error(body.error ?? "not_found");
+      if (!body.task?.patient || !body.task?.appointment) throw new Error("query_failed");
       setTask(body.task);
       setPhase("ready");
     } catch (error) {
       setPhase("error");
-      setMessage(error instanceof Error ? error.message : "โหลดรายละเอียดไม่สำเร็จ");
+      const code = error instanceof Error ? error.message : "network";
+      setMessage(code === "not_found" ? "ไม่พบงาน หรือคุณไม่มีสิทธิ์เข้าถึงงานนี้" : volunteerLoadErrorMessage(code));
     }
   }, [id]);
 

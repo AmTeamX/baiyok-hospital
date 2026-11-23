@@ -8,7 +8,7 @@ import {
 describe("volunteer assignment → push → LIFF loop (mock provider)", () => {
   it("deep links to the volunteer task page with a PHI-free push message", async () => {
     const link = assignmentDeepLink("fu-1", "https://app.example");
-    expect(link).toBe("https://app.example/liff/volunteer/tasks/fu-1");
+    expect(link).toBe("https://app.example/liff/link?destination=volunteer%2Ftasks%2Ffu-1");
 
     const message = buildAssignmentMessage("fu-1", "https://app.example");
     expect(message).toContain(link);
@@ -23,7 +23,7 @@ describe("volunteer assignment → push → LIFF loop (mock provider)", () => {
       "https://app.example"
     );
     expect(result).toEqual({ status: "sent" });
-    expect(send.mock.calls[0][1]).toContain("/liff/volunteer/tasks/fu-1");
+    expect(send.mock.calls[0][1]).toContain("destination=volunteer%2Ftasks%2Ffu-1");
     expect(send.mock.calls[0][1]).not.toMatch(/HN|ชื่อ-นามสกุล|เบาหวาน|ความดัน|ยารักษา|คลินิก/);
   });
 

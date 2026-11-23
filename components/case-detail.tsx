@@ -164,7 +164,8 @@ export function CaseDetail({ id }: { id: string }) {
       if (!response.ok) {
         setAssignMessage(body.error ?? "มอบหมายไม่สำเร็จ");
       } else {
-        setAssignMessage(body.notification_status === "unlinked" ? "มอบหมายแล้ว (อสม. ยังไม่ผูก LINE)" : "มอบหมายแล้วและส่งการแจ้งเตือนแล้ว");
+        const deliveryLabels: Record<string, string> = { sent: "ส่งแจ้งเตือน LINE แล้ว", unlinked: "อสม. ยังไม่ผูก LINE", blocked: "ส่ง LINE ไม่ได้ กรุณาตรวจสอบการบล็อกบัญชี", failed: "ส่ง LINE ไม่สำเร็จ ระบบจะลองส่งอีกครั้ง", pending: "แจ้งเตือน LINE รอส่ง" };
+        setAssignMessage(`มอบหมายแล้ว · ${deliveryLabels[body.notification_status] ?? "ตรวจสถานะข้อความในหน้าการส่งข้อความ"}`);
         await load();
       }
     } catch {

@@ -6,6 +6,18 @@ beforeEach(() => {
 });
 
 describe("pushLineText", () => {
+  it("requests a visible notification and uses the outbox ID as a retry key", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    globalThis.fetch = fetchImpl;
+    await pushLineText("U123", "new case", "11111111-1111-4111-8111-111111111111");
+    const init = fetchImpl.mock.calls[0][1] as RequestInit;
+    expect(init.headers).toMatchObject({ "X-Line-Retry-Key": "11111111-1111-4111-8111-111111111111" });
+    expect(JSON.parse(String(init.body)).notificationDisabled).toBe(false);
+  });
+  it("treats an already accepted retry as success without another message", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response("{}", { status: 409, headers: { "x-line-accepted-request-id": "accepted-1" } }));
+    await expect(pushLineText("U123", "new case", "11111111-1111-4111-8111-111111111111")).resolves.toBeUndefined();
+  });
   it("pushes a message and returns when LINE accepts it", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
     globalThis.fetch = fetchImpl as unknown as typeof fetch;

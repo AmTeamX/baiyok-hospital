@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
+import { dispatchNotifications } from "@/lib/notification-dispatch";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -39,5 +40,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const result = data as { follow_up_id: string; volunteer_id: string; reassigned: boolean; idempotent: boolean; notification_id: string | null; notification_status: string };
+  if (result.notification_id && result.notification_status === "pending") {
+    try {
+      const delivery = await dispatchNotifications({ notificationId: result.notification_id });
+      if (delivery.sent) result.notification_status = "sent";
+      else if (delivery.blocked) result.notification_status = "blocked";
+      else if (delivery.unlinked) result.notification_status = "unlinked";
+      else if (delivery.failed) result.notification_status = "failed";
+    } catch { /* The assignment remains committed; the outbox retries delivery. */ }
+  }
   return NextResponse.json({ ok: true, mode: "database", ...result });
 }

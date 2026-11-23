@@ -116,7 +116,10 @@ export function PatientDetail({ id }: { id: string }) {
       if (!response.ok) {
         setAssignMessage(body.error ?? "มอบหมายไม่สำเร็จ");
       } else {
-        setAssignMessage(`มอบหมายแล้ว${body.assigned_follow_ups ? ` (อัปเดตเคสติดตาม ${body.assigned_follow_ups} ราย)` : ""}`);
+        const assignedCount = Number(body.assigned_follow_ups ?? 0);
+        setAssignMessage(assignedCount === 0
+          ? "ตั้ง อสม. ผู้รับผิดชอบแล้ว · ยังไม่มีเคสติดตามใหม่ให้มอบหมาย จึงยังไม่มีข้อความแจ้งงาน"
+          : `มอบหมาย ${assignedCount} เคสแล้ว · ${body.delivery?.sent ? `ส่ง LINE แล้ว ${body.delivery.sent} ข้อความ` : "ตรวจสถานะข้อความในหน้าการส่งข้อความ"}`);
         await load();
       }
     } catch {
@@ -256,6 +259,7 @@ export function PatientDetail({ id }: { id: string }) {
             <div><h2>นัดทั้งหมด</h2><p>นัด {detail.appointments.length} รายการ</p></div>
             <button className="button secondary" onClick={() => setShowAdd(true)}><CalendarPlus size={16} /> เพิ่มนัด</button>
           </div>
+          {detail.appointments.length > 0 && detail.appointments.every((appointment) => !appointment.followUp) && <div className="state-banner" role="status"><span>ยังไม่มีเคสติดตามสำหรับผู้ป่วยรายนี้ ระบบสร้างงานติดตามเมื่อมีนัดขาดนัด ส่วนการตั้ง อสม. เป็นการระบุผู้รับผิดชอบสำหรับงานที่จะเกิดขึ้น</span></div>}
 
           {detail.appointments.length === 0 ? (
             <div className="state-banner empty"><span>ยังไม่มีนัด</span></div>
