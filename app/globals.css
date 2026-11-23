@@ -324,6 +324,23 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 .timeline strong, .timeline small { display: block; }
 .timeline small { color: var(--color-muted); }
 .timeline p { margin-block-start: var(--space-2xs); color: var(--color-ink-2); }
+.timeline-content { min-width: 0; }
+.timeline-type { display: block; font-weight: 800; color: var(--color-ink); }
+.record-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-md); margin-block-end: var(--space-lg); }
+.record-heading h2 { margin: 0; }
+.record-heading .eyebrow { margin-block-end: var(--space-2xs); }
+.record-form { display: grid; gap: var(--space-lg); }
+.record-choice { min-width: 0; margin: 0; padding: 0; border: 0; }
+.record-choice legend { margin-block-end: var(--space-xs); color: var(--color-ink-2); font-size: var(--text-sm); font-weight: 800; }
+.record-choice-grid, .record-priority-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-xs); }
+.record-priority-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.record-choice label { position: relative; cursor: pointer; }
+.record-choice input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.record-choice label span { display: grid; min-height: 3rem; place-items: center; padding: var(--space-sm); border: var(--rule-thin) solid var(--color-rule-2); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-ink-2); text-align: center; font-size: var(--text-sm); font-weight: 700; }
+.record-choice label.selected span { border: 2px solid var(--color-accent); background: var(--color-accent-soft); color: var(--color-accent-strong); }
+.record-choice input:focus-visible + span { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.record-save-bar { position: sticky; inset-block-end: var(--space-sm); z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding: var(--space-md); border: var(--rule-thin) solid var(--color-rule-2); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: 0 0.75rem 2rem var(--color-shadow); }
+.record-save-bar span { color: var(--color-muted); font-size: var(--text-xs); }
 .activity-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-sm); margin-block-start: var(--space-lg); padding-block-start: var(--space-lg); border-block-start: var(--rule-thin) solid var(--color-rule); }
 .activity-form .button { justify-self: start; }
 @media (min-width: 40rem) {
@@ -576,6 +593,10 @@ fieldset.field { margin: var(--space-lg) 0 0; padding: var(--space-sm); border: 
 }
 
 @media (max-width: 39.99rem) {
+  .record-choice-grid { grid-template-columns: 1fr; }
+  .record-priority-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .record-save-bar { align-items: stretch; flex-direction: column; }
+  .record-save-bar .button { width: 100%; }
   .assignee-current { grid-template-columns: auto minmax(0, 1fr); }
   .assignee-status { grid-column: 2; justify-self: start; }
   .search-pill { width: auto; margin-inline-start: auto; border: 0; background: transparent; }

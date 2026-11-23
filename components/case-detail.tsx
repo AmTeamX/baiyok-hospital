@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CircleAlert, Clock3, LoaderCircle, RotateCcw, Save, UserRoundCheck } from "lucide-react";
 import { type FollowUpDetail } from "@/lib/follow-up";
 import { MISSED_PRIORITIES, MISSED_STATUSES, type MissedPriority, type MissedStatus } from "@/lib/missed";
+import { MISSED_REASONS, NURSING_ACTIVITIES } from "@/lib/follow-ups";
 import { WorkspaceTabs } from "@/components/workspace-tabs";
 import Link from "next/link";
 import { Modal } from "@/components/modal";
@@ -25,7 +26,22 @@ function thaiDateTime(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Bangkok" }).format(date);
+  return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" }).format(date);
+}
+function thaiActivityType(value: string) {
+  const labels: Record<string, string> = {
+    phone: "โทรศัพท์ติดตาม",
+    call: "โทรศัพท์ติดตาม",
+    telephone: "โทรศัพท์ติดตาม",
+    โทร: "โทรศัพท์ติดตาม",
+    home_visit: "มอบหมาย อสม. เยี่ยมบ้าน",
+    volunteer_visit: "มอบหมาย อสม. เยี่ยมบ้าน",
+    medicine_counselling: "ให้คำปรึกษาเรื่องยา",
+    health_material: "ให้สื่อสุขภาพ",
+    reschedule_clinic: "ประสานคลินิกนัดใหม่"
+  };
+  if ((NURSING_ACTIVITIES as readonly string[]).includes(value)) return value;
+  return labels[value] ?? "กิจกรรมติดตาม";
 }
 function daysLate(appointmentAt: string) {
   if (!appointmentAt) return 0;
@@ -231,23 +247,35 @@ export function CaseDetail({ id }: { id: string }) {
         </section>
 
         <section className="panel case-edit" hidden={view !== "record"}>
-          <h2>บันทึก/แก้ไขผลติดตาม</h2>
-          <form onSubmit={save} className="case-form">
-            <label className="field"><span>สถานะ</span>
-              <select value={status} onChange={(event) => setStatus(event.target.value as MissedStatus)}>
-                {MISSED_STATUSES.map((value) => <option key={value} value={value}>{STATUS_LABEL[value]}</option>)}
-              </select>
-            </label>
-            <label className="field"><span>ความเร่งด่วน</span>
-              <select value={priority} onChange={(event) => setPriority(event.target.value as MissedPriority)}>
-                {MISSED_PRIORITIES.map((value) => <option key={value} value={value}>{PRIORITY_LABEL[value]}</option>)}
-              </select>
-            </label>
-            <label className="field"><span>สาเหตุที่ขาดนัด</span><input value={missedReason} onChange={(event) => setMissedReason(event.target.value)} /></label>
-            <label className="field"><span>รายละเอียดเพิ่มเติม</span><textarea value={reasonNote} onChange={(event) => setReasonNote(event.target.value)} /></label>
-            <label className="field"><span>บันทึกคำปรึกษา</span><textarea value={counsellingNote} onChange={(event) => setCounsellingNote(event.target.value)} /></label>
-            <label className="field"><span>เหตุผลการปิดเคส</span><input value={closureReason} onChange={(event) => setClosureReason(event.target.value)} placeholder="ระบุเมื่อปิดเคส" /></label>
-            <button className={`button primary ${saving ? "loading" : ""}`} disabled={saving}>{saving ? <><LoaderCircle className="spin" size={18} />กำลังบันทึก</> : <><Save size={18} />บันทึกการติดตาม</>}</button>
+          <div className="record-heading"><div><p className="eyebrow">บันทึกผล</p><h2>อัปเดตผลการติดตาม</h2></div><span className={`status-badge ${status}`}>{STATUS_LABEL[status]}</span></div>
+          <form onSubmit={save} className="record-form">
+            <fieldset className="record-choice">
+              <legend>สถานะเคส</legend>
+              <div className="record-choice-grid">
+                {MISSED_STATUSES.map((value) => (
+                  <label key={value} className={status === value ? "selected" : ""}>
+                    <input type="radio" name="status" value={value} checked={status === value} onChange={() => setStatus(value)} />
+                    <span>{STATUS_LABEL[value]}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="record-choice">
+              <legend>ความเร่งด่วน</legend>
+              <div className="record-priority-grid">
+                {MISSED_PRIORITIES.map((value) => (
+                  <label key={value} className={priority === value ? "selected" : ""}>
+                    <input type="radio" name="priority" value={value} checked={priority === value} onChange={() => setPriority(value)} />
+                    <span>{PRIORITY_LABEL[value]}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <label className="field"><span>สาเหตุที่ขาดนัด</span><select value={MISSED_REASONS.includes(missedReason as (typeof MISSED_REASONS)[number]) ? missedReason : ""} onChange={(event) => setMissedReason(event.target.value)}><option value="">เลือกสาเหตุหลัก</option>{MISSED_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}</select></label>
+            <label className="field"><span>รายละเอียดเพิ่มเติม</span><textarea value={reasonNote} onChange={(event) => setReasonNote(event.target.value)} placeholder="สิ่งที่ผู้ป่วยเล่า หรือข้อจำกัดที่พบ" /></label>
+            <label className="field"><span>บันทึกคำปรึกษา</span><textarea value={counsellingNote} onChange={(event) => setCounsellingNote(event.target.value)} placeholder="ประเด็นคำแนะนำและการตอบสนอง" /></label>
+            <label className="field"><span>เหตุผลการปิดเคส <small>(กรณีปิดเคส)</small></span><input value={closureReason} onChange={(event) => setClosureReason(event.target.value)} placeholder="ระบุเมื่อปิดเคส" /></label>
+            <div className="record-save-bar"><span>การเปลี่ยนแปลงจะบันทึกลงในเคสทันที</span><button className={`button primary ${saving ? "loading" : ""}`} disabled={saving}>{saving ? <><LoaderCircle className="spin" size={18} />กำลังบันทึก</> : <><Save size={18} />บันทึกผลติดตาม</>}</button></div>
           </form>
         </section>
       </div>
@@ -289,7 +317,7 @@ export function CaseDetail({ id }: { id: string }) {
             {detail.activities.map((activity) => (
               <li key={activity.id}>
                 <span className="timeline-dot" />
-                <div><strong>{activity.activityType}</strong><small>{activity.performerName ?? "ระบบ"} · {thaiDateTime(activity.performedAt)}</small>{activity.note && <p>{activity.note}</p>}</div>
+                <div className="timeline-content"><span className="timeline-type">{thaiActivityType(activity.activityType)}</span><small>{activity.performerName ? `บันทึกโดย ${activity.performerName}` : "บันทึกโดยระบบ"} · {thaiDateTime(activity.performedAt)}</small>{activity.note && <p>{activity.note}</p>}</div>
               </li>
             ))}
           </ol>
@@ -298,8 +326,8 @@ export function CaseDetail({ id }: { id: string }) {
       <Modal open={activityOpen} onClose={() => { if (!adding) setActivityOpen(false); }} title="เพิ่มกิจกรรมติดตาม" description="บันทึกการติดต่อและสิ่งที่ได้ดำเนินการ" size="sm">
         <form onSubmit={addActivity} className="case-form">
           {activityError && <p className="form-error" role="alert">{activityError}</p>}
-          <label className="field"><span>กิจกรรมใหม่</span><input value={activityType} onChange={(event) => setActivityType(event.target.value)} placeholder="เช่น โทรศัพท์ติดตาม, ให้คำปรึกษาเรื่องยา" required /></label>
-          <label className="field"><span>บันทึกเพิ่มเติม</span><input value={activityNote} onChange={(event) => setActivityNote(event.target.value)} placeholder="รายละเอียด (ไม่บังคับ)" /></label>
+          <label className="field"><span>เลือกกิจกรรม</span><select value={activityType} onChange={(event) => setActivityType(event.target.value)} required><option value="">เลือกประเภทกิจกรรม</option>{NURSING_ACTIVITIES.map((activity) => <option key={activity} value={activity}>{activity}</option>)}</select></label>
+          <label className="field"><span>บันทึกเพิ่มเติม</span><textarea value={activityNote} onChange={(event) => setActivityNote(event.target.value)} placeholder="รายละเอียดสิ่งที่ดำเนินการ (ไม่บังคับ)" /></label>
           <button className={`button secondary ${adding ? "loading" : ""}`} disabled={adding}>{adding ? <LoaderCircle className="spin" size={18} /> : "เพิ่มกิจกรรม"}</button>
         </form>
       </Modal>

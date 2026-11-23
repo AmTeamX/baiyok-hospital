@@ -62,6 +62,7 @@ export default function AppointmentsPage() {
   const [clinic, setClinic] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState("scheduled");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,6 +90,7 @@ export default function AppointmentsPage() {
     setSelected(appointment);
     setAppointmentAt(toDateTimeLocal(appointment.appointmentAt));
     setClinic(appointment.clinic);
+    setSelectedStatus(appointment.status);
     setFormError(null);
   }
 
@@ -102,7 +104,7 @@ export default function AppointmentsPage() {
       const response = await fetch(`/api/appointments/${selected.id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ appointmentAt: date.toISOString(), clinic, status: "scheduled" })
+        body: JSON.stringify({ appointmentAt: date.toISOString(), clinic, status: selectedStatus })
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "บันทึกนัดไม่สำเร็จ");
@@ -177,11 +179,16 @@ export default function AppointmentsPage() {
                 <div className="patient-contact"><strong>{appointment.clinic}</strong></div>
                 <div><i className={`status-dot status-${appointment.status}`}>{STATUS_LABEL[appointment.status] ?? appointment.status}</i></div>
                 <div className="patient-nav-actions">
-                  {appointment.status !== "cancelled" && appointment.status !== "attended" && (
+                  {appointment.status !== "cancelled" && (
                     <>
-                      <button className="icon-button" type="button" onClick={() => openEdit(appointment)} aria-label={`ย้ายนัด ${appointment.patient.fullName}`} title="ย้ายนัด"><Pencil size={17} /></button>
-                      <button className="icon-button" type="button" disabled={saving} onClick={() => void cancelAppointment(appointment)} aria-label={`ยกเลิกนัด ${appointment.patient.fullName}`} title="ยกเลิกนัด"><XCircle size={17} /></button>
+                      <button className="icon-button" type="button" onClick={() => openEdit(appointment)} aria-label={`จัดการนัด ${appointment.patient.fullName}`} title="จัดการนัด"><Pencil size={17} /></button>
+                      {appointment.status !== "attended" && (
+                        <button className="icon-button" type="button" disabled={saving} onClick={() => void cancelAppointment(appointment)} aria-label={`ยกเลิกนัด ${appointment.patient.fullName}`} title="ยกเลิกนัด"><XCircle size={17} /></button>
+                      )}
                     </>
+                  )}
+                  {appointment.status === "cancelled" && (
+                    <button className="icon-button" type="button" onClick={() => openEdit(appointment)} aria-label={`จัดการนัด ${appointment.patient.fullName}`} title="จัดการนัด"><Pencil size={17} /></button>
                   )}
                 </div>
               </article>
@@ -190,11 +197,20 @@ export default function AppointmentsPage() {
         )}
       </section>
 
-      <Modal open={Boolean(selected)} onClose={() => { if (!saving) setSelected(null); }} title="ย้ายวันนัด" description={selected ? `ผู้ป่วย ${selected.patient.fullName} · HN ${selected.patient.hn}` : ""} size="sm">
+      <Modal open={Boolean(selected)} onClose={() => { if (!saving) setSelected(null); }} title="จัดการนัด" description={selected ? `ผู้ป่วย ${selected.patient.fullName} · HN ${selected.patient.hn}` : ""} size="sm">
         <form onSubmit={(event) => { event.preventDefault(); void saveAppointment(); }} className="case-form">
           {formError && <div className="state-banner error" role="alert"><span>{formError}</span></div>}
           <label className="field"><span>วันและเวลานัดใหม่</span><input type="datetime-local" value={appointmentAt} onChange={(event) => setAppointmentAt(event.target.value)} required autoFocus /></label>
           <label className="field"><span>คลินิก</span><input value={clinic} onChange={(event) => setClinic(event.target.value)} required /></label>
+          <label className="field">
+            <span>สถานะนัด</span>
+            <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)}>
+              <option value="scheduled">นัดปกติ</option>
+              <option value="attended">มาแล้ว</option>
+              <option value="missed">ขาดนัด</option>
+              <option value="cancelled">ยกเลิก</option>
+            </select>
+          </label>
           <div className="modal-actions">
             <button type="button" className="button secondary" onClick={() => setSelected(null)} disabled={saving}>ยกเลิก</button>
             <button className="button primary" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : null}บันทึกนัดใหม่</button>

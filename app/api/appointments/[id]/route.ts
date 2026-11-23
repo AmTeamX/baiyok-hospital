@@ -20,7 +20,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     status?: unknown;
   };
   const clinic = typeof body.clinic === "string" ? body.clinic.trim() : "";
-  const status = body.status === "cancelled" ? "cancelled" : "scheduled";
+  const requestedStatus = typeof body.status === "string" ? body.status : "scheduled";
+  if (!["scheduled", "attended", "missed", "cancelled"].includes(requestedStatus)) {
+    return NextResponse.json({ ok: false, error: "invalid_status" }, { status: 422 });
+  }
+  const status = requestedStatus;
 
   let appointmentAt: string | null = null;
   if (typeof body.appointmentAt === "string" && body.appointmentAt.trim()) {
@@ -51,7 +55,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .maybeSingle();
   if (patientError || !patient) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
 
-  const update: Record<string, unknown> = { status };
+  const now = new Date().toISOString();
+  const update: Record<string, unknown> = {
+    status,
+    attended_at: status === "attended" ? now : null,
+    missed_marked_at: status === "missed" ? now : null
+  };
   if (status === "scheduled") {
     update.appointment_at = appointmentAt;
     update.clinic = clinic;
@@ -66,6 +75,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: "บันทึกนัดไม่สำเร็จ" }, { status: 500 });
   }
 
+  if (status === "missed") {
+    await supabase
+      .from("follow_ups")
+      .upsert({ appointment_id: id, status: "pending", priority: "normal" }, { onConflict: "appointment_id" });
+  }
+
   const { data: link } = await supabase
     .from("line_account_links")
     .select("line_account_id")
@@ -74,7 +89,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .eq("status", "active")
     .maybeSingle();
   if (link?.line_account_id) {
-    const notificationStatus = status === "cancelled" ? "cancelled" : "rescheduled";
+    const notificationStatus = status === "cancelled" ? "cancelled" : status === "scheduled" ? "rescheduled" : null;
+    if (notificationStatus) {
     await supabase.from("notification_logs").insert({
       appointment_id: id,
       recipient_line_account_id: link.line_account_id,
@@ -85,6 +101,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       attempt_count: 0,
       next_attempt_at: new Date().toISOString()
     });
+    }
   }
 
   try {

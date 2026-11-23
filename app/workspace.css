@@ -38,7 +38,30 @@
 .case-create fieldset { display: grid; gap: 1.25rem; min-width: 0; padding: 0; border: 0; }
 .case-form-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .case-create-actions { display: flex; justify-content: flex-end; gap: .75rem; border-top: 1px solid var(--color-rule); margin-top: 1.5rem; padding-top: 1.25rem; }
-@media (max-width: 760px) { .case-filters, .case-form-columns { grid-template-columns: 1fr; } .case-create-section { padding: 1rem; } .case-selected-patient, .case-appointment-choice { flex-wrap: wrap; } .case-steps { gap: 1rem; font-size: .8rem; } }
+.case-create-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem); gap: 1.25rem; align-items: start; }
+.case-create-layout > .case-create-section { margin-bottom: 0; }
+.case-section-heading { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: 1.25rem; }
+.case-section-heading > span { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--color-accent-soft); color: var(--color-accent-strong); font-size: .8rem; font-weight: 800; }
+.case-section-heading h2 { margin: 0; }
+.case-section-heading p { margin: .25rem 0 0; color: var(--color-muted); font-size: .85rem; }
+.case-create-layout fieldset { gap: 1rem; }
+.case-create-layout fieldset .assignee-current { margin-block: 0; }
+.case-create-layout textarea { min-height: 7.5rem; }
+.case-create-summary dl { display: grid; gap: .65rem; margin: 0 0 1.25rem; }
+.case-create-summary dl div { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: .75rem; }
+.case-create-summary dt { color: var(--color-muted); font-size: .78rem; font-weight: 700; }
+.case-create-summary dd { margin: 0; font-weight: 700; }
+.case-patient-section { position: relative; }
+.case-selected-patient { min-height: 4.5rem; padding: 1rem; border: 1px solid var(--color-accent-soft); border-radius: .5rem; background: var(--color-accent-soft); }
+.case-selected-patient p { margin: .25rem 0 0; color: var(--color-muted); }
+.case-loading { min-height: 4.5rem; display: grid; align-items: center; color: var(--color-muted); }
+.case-appointment-list { display: grid; gap: .6rem; margin-top: 1rem; }
+.case-list-label { color: var(--color-ink-2); font-size: .82rem; font-weight: 800; }
+.case-appointment-choice { min-height: 4.25rem; }
+.case-appointment-choice strong, .case-appointment-choice small { display: block; }
+.case-appointment-choice small { margin-top: .25rem; color: var(--color-muted); }
+.case-choice-action { flex: 0 0 auto; color: var(--color-accent-strong); font-weight: 800; }
+@media (max-width: 760px) { .case-filters, .case-form-columns { grid-template-columns: 1fr; } .case-create-section { padding: 1rem; } .case-selected-patient, .case-appointment-choice { flex-wrap: wrap; } .case-steps { gap: 1rem; font-size: .8rem; } .case-create-layout { grid-template-columns: 1fr; } .case-create-summary dl div { grid-template-columns: 6rem minmax(0, 1fr); } .case-create-actions { position: sticky; bottom: 0; z-index: 10; margin-inline: -1rem; padding: .75rem 1rem; background: var(--color-surface); } .case-create-actions .button { flex: 1; } }
 [hidden] { display: none !important; }
 .status-screen { min-height: 80dvh; padding: 2rem; background: var(--color-paper); }
 .status-brand { display: flex; gap: 0.5rem; align-items: center; color: var(--color-accent-strong); font-weight: 800; }

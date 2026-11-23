@@ -58,28 +58,86 @@ export function CreateCase() {
   }
   return <div className="case-create">
     <Link className="text-link" href="/cases">← กลับจัดการเคส</Link>
-    <div className="page-heading"><div><p className="eyebrow">New follow-up case</p><h1>สร้างเคสติดตาม</h1><p>หนึ่งเคสผูกกับหนึ่งนัด เลือกผู้ป่วยและนัดก่อนมอบหมายให้ อสม.</p></div></div>
-    <ol className="case-steps" aria-label="ขั้นตอนสร้างเคส"><li aria-current={!patient ? "step" : undefined}><b>1</b>เลือกผู้ป่วย</li><li aria-current={patient ? "step" : undefined}><b>2</b>เลือกนัดและมอบหมาย</li></ol>
+    <div className="page-heading">
+      <div><p className="eyebrow">สร้างเคสติดตาม</p><h1>เลือกนัดและมอบหมายงาน</h1><p>เลือกผู้ป่วยและนัดที่ต้องติดตาม แล้วกำหนดผู้รับผิดชอบในขั้นตอนเดียว</p></div>
+    </div>
+    <ol className="case-steps" aria-label="ขั้นตอนสร้างเคส">
+      <li aria-current={!patient ? "step" : undefined}><b>1</b><span>ผู้ป่วยและนัด</span></li>
+      <li aria-current={patient ? "step" : undefined}><b>2</b><span>ผู้รับผิดชอบและยืนยัน</span></li>
+    </ol>
     {error && <div role="alert" className="state-banner error">{error}{patientId && !patient && !loading && <button className="button secondary" onClick={() => setRetry((v) => v + 1)}>ลองโหลดใหม่</button>}</div>}
-    <section className="panel case-create-section"><h2>1. ผู้ป่วย</h2>
-      {loading ? <p role="status">กำลังโหลดผู้ป่วย…</p> : patient ? <div className="case-selected-patient"><div><strong>{patient.patient.fullName}</strong><p>HN {patient.patient.hn}</p></div><button type="button" className="button secondary" disabled={saving} onClick={() => { setPatientId(""); setAppointmentId(""); setVolunteerId(""); setResults(null); setError(""); }}>เปลี่ยนผู้ป่วย</button></div> : <><form onSubmit={search} className="case-search"><label className="field">ชื่อผู้ป่วย หรือ HN<input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="พิมพ์เพื่อค้นหาในทะเบียน" required /></label><button className="button secondary" disabled={searching}>{searching ? "กำลังค้นหา…" : "ค้นหา"}</button></form>{results && <div className="case-patient-results" aria-live="polite">{results.length === 0 ? <p>ไม่พบผู้ป่วย ลองค้นหาด้วย HN หรือ<Link className="text-link" href="/patients/add">เพิ่มผู้ป่วย</Link></p> : results.map((item) => <button key={item.id} className="case-patient-choice" onClick={() => setPatientId(item.id)}><span><strong>{item.fullName}</strong><small>HN {item.hn}</small></span><span>เลือกผู้ป่วย →</span></button>)}</div>}</>}
-    </section>
-    {patient && <form onSubmit={create} className="panel case-create-section"><h2>2. นัดและการมอบหมาย</h2><fieldset disabled={saving}><legend className="sr-only">ข้อมูลเคส</legend>
-      <div className="field"><span>นัดที่ต้องติดตาม <span aria-hidden="true">*</span></span>{patient.appointments.length === 0 ? <div className="state-banner">ผู้ป่วยยังไม่มีนัด <Link href={`/patients/${patientId}`} className="text-link">ไปเพิ่มนัดในข้อมูลผู้ป่วย</Link></div> : patient.appointments.map((a) => <div key={a.id} className="case-appointment-choice">{a.followUp ? <><span><strong>{a.clinic}</strong><small>{new Date(a.appointmentAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" })} · มีเคสแล้ว</small></span><Link className="text-link" href={`/follow-up/${a.followUp.id}`}>เปิดเคสเดิม →</Link></> : ["scheduled", "missed"].includes(a.status) ? <label><input type="radio" name="appointment" required checked={appointmentId === a.id} onChange={() => setAppointmentId(a.id)} /><span><strong>{a.clinic}</strong><small>{new Date(a.appointmentAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" })} · {a.status === "missed" ? "ขาดนัด" : "นัดหมาย"}</small></span></label> : <span><strong>{a.clinic}</strong><small>นัดสิ้นสุดแล้ว — สร้างเคสไม่ได้</small></span>}</div>)}</div>
-      <div className="case-form-columns">
-        <label className="field">ความเร่งด่วน<select value={priority} onChange={(e) => setPriority(e.target.value)}>{Object.entries(CASE_PRIORITY_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
-        <div className="case-assignee-field">
-          <div className="assignee-current" role="group" aria-label="ผู้ดูแลประจำของผู้ป่วย">
-            <span className="assignee-current-icon" aria-hidden="true">อสม.</span>
-            <div><span>ผู้ดูแลประจำของผู้ป่วย</span><strong>{patient.patient.assigneeName ?? "ยังไม่มอบหมาย"}</strong></div>
-            <span className={`assignee-status ${patient.patient.assigneeName ? "assigned" : "unassigned"}`}>{patient.patient.assigneeName ? "ใช้ผู้ดูแลประจำ" : "รอมอบหมาย"}</span>
-          </div>
-          <label className="field">เลือกผู้รับผิดชอบคนอื่น<select value={volunteerId} onChange={(e) => setVolunteerId(e.target.value)}><option value="">ใช้ผู้ดูแลประจำหรือยังไม่มอบหมาย</option>{volunteers.map((v) => <option key={v.id} value={v.id}>{v.full_name}</option>)}</select>{volunteerError && <small>โหลดรายชื่อ อสม. ไม่สำเร็จ สามารถมอบหมายภายหลังได้</small>}</label>
+
+    <section className="panel case-create-section case-patient-section">
+      <div className="case-section-heading"><span>1</span><div><h2>ผู้ป่วยและนัด</h2><p>เลือกผู้ป่วยก่อน เพื่อดูเฉพาะนัดที่สามารถสร้างเคสได้</p></div></div>
+      {loading ? <p className="case-loading" role="status">กำลังโหลดข้อมูล…</p> : patient ? (
+        <div className="case-selected-patient">
+          <div><strong>{patient.patient.fullName}</strong><p>HN {patient.patient.hn}</p></div>
+          <button type="button" className="button secondary" disabled={saving} onClick={() => { setPatientId(""); setAppointmentId(""); setVolunteerId(""); setResults(null); setError(""); }}>เปลี่ยนผู้ป่วย</button>
         </div>
-      </div>
-      <label className="field">รายละเอียดสำหรับผู้ติดตาม<textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} placeholder="ระบุสิ่งที่ต้องติดตาม หรือข้อควรทราบ" /></label>
-      <div className="state-banner">การสร้างเคสจะคงวันและสถานะนัดเดิม หากมีผู้รับผิดชอบ ระบบจะส่งงานใหม่เข้า LINE ทันที และเตือนงานค้างวันละ 1 รอบ เวลา 08:00 น.</div>
-      </fieldset><div className="case-create-actions"><Link className="button secondary" href="/cases">ยกเลิก</Link><button className="button primary" disabled={!appointmentId || saving}>{saving ? "กำลังสร้างเคส…" : "สร้างเคสติดตาม"}</button></div>
-    </form>}
+      ) : (
+        <>
+          <form onSubmit={search} className="case-search">
+            <label className="field"><span>ชื่อผู้ป่วย หรือ HN</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="พิมพ์ชื่อหรือ HN เพื่อค้นหา" required /></label>
+            <button className="button primary" disabled={searching}>{searching ? "กำลังค้นหา…" : "ค้นหา"}</button>
+          </form>
+          {results && <div className="case-patient-results" aria-live="polite">
+            {results.length === 0 ? <p>ไม่พบผู้ป่วย ลองค้นหาด้วย HN หรือ<Link className="text-link" href="/patients/add">เพิ่มผู้ป่วย</Link></p> : results.map((item) => (
+              <button key={item.id} type="button" className="case-patient-choice" onClick={() => setPatientId(item.id)}>
+                <span><strong>{item.fullName}</strong><small>HN {item.hn}</small></span><span className="case-choice-action">เลือกผู้ป่วย →</span>
+              </button>
+            ))}
+          </div>}
+        </>
+      )}
+
+      {patient && (
+        <div className="case-appointment-list">
+          <span className="case-list-label">นัดที่ต้องติดตาม <span aria-hidden="true">*</span></span>
+          {patient.appointments.length === 0 ? (
+            <div className="state-banner">ผู้ป่วยยังไม่มีนัด <Link href={`/patients/${patientId}`} className="text-link">ไปเพิ่มนัดในข้อมูลผู้ป่วย</Link></div>
+          ) : patient.appointments.map((a) => (
+            <div key={a.id} className="case-appointment-choice">
+              {a.followUp ? (
+                <><span><strong>{a.clinic}</strong><small>{new Date(a.appointmentAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" })} · มีเคสแล้ว</small></span><Link className="text-link" href={`/follow-up/${a.followUp.id}`}>เปิดเคสเดิม →</Link></>
+              ) : ["scheduled", "missed"].includes(a.status) ? (
+                <label><input type="radio" name="appointment" required checked={appointmentId === a.id} onChange={() => setAppointmentId(a.id)} /><span><strong>{a.clinic}</strong><small>{new Date(a.appointmentAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" })} · {a.status === "missed" ? "ขาดนัด" : "นัดหมาย"}</small></span></label>
+              ) : (
+                <span><strong>{a.clinic}</strong><small>นัดสิ้นสุดแล้ว — สร้างเคสไม่ได้</small></span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+
+    {patient && (
+      <form onSubmit={create} className="case-create-layout">
+        <section className="panel case-create-section">
+          <div className="case-section-heading"><span>2</span><div><h2>กำหนดผู้รับผิดชอบ</h2><p>เลือกความเร่งด่วนและ อสม. ที่จะดูแลเคสนี้</p></div></div>
+          <fieldset disabled={saving}>
+            <legend className="sr-only">ข้อมูลผู้รับผิดชอบ</legend>
+            <label className="field"><span>ความเร่งด่วน</span><select value={priority} onChange={(e) => setPriority(e.target.value)}>{Object.entries(CASE_PRIORITY_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+            <div className="assignee-current" role="group" aria-label="ผู้ดูแลประจำของผู้ป่วย">
+              <span className="assignee-current-icon" aria-hidden="true">อสม.</span>
+              <div><span>ผู้ดูแลประจำของผู้ป่วย</span><strong>{patient.patient.assigneeName ?? "ยังไม่มอบหมาย"}</strong></div>
+              <span className={`assignee-status ${patient.patient.assigneeName ? "assigned" : "unassigned"}`}>{patient.patient.assigneeName ? "ค่าเริ่มต้น" : "รอมอบหมาย"}</span>
+            </div>
+            <label className="field"><span>มอบหมายให้คนอื่น</span><select value={volunteerId} onChange={(e) => setVolunteerId(e.target.value)}><option value="">ใช้ผู้ดูแลประจำหรือยังไม่มอบหมาย</option>{volunteers.map((v) => <option key={v.id} value={v.id}>{v.full_name}</option>)}</select>{volunteerError && <small>โหลดรายชื่อ อสม. ไม่สำเร็จ สามารถมอบหมายภายหลังได้</small>}</label>
+          </fieldset>
+        </section>
+        <section className="panel case-create-section case-create-summary">
+          <div className="case-section-heading"><span>3</span><div><h2>ยืนยันการสร้างเคส</h2><p>ตรวจข้อมูลสั้น ๆ ก่อนบันทึก</p></div></div>
+          <dl>
+            <div><dt>นัด</dt><dd>{appointmentId ? "เลือกแล้ว" : "ยังไม่ได้เลือก"}</dd></div>
+            <div><dt>ผู้รับผิดชอบ</dt><dd>{volunteers.find((v) => v.id === volunteerId)?.full_name ?? patient.patient.assigneeName ?? "ยังไม่มอบหมาย"}</dd></div>
+          </dl>
+          <label className="field"><span>รายละเอียดสำหรับผู้ติดตาม</span><textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} placeholder="สิ่งที่ต้องติดตามหรือข้อควรทราบ" /></label>
+          <div className="case-create-actions">
+            <Link className="button secondary" href="/cases">ยกเลิก</Link>
+            <button className="button primary" disabled={!appointmentId || saving}>{saving ? "กำลังสร้างเคส…" : "สร้างเคสติดตาม"}</button>
+          </div>
+        </section>
+      </form>
+    )}
   </div>;
 }

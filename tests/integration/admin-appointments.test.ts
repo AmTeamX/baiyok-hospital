@@ -76,7 +76,11 @@ describe("PATCH /api/appointments/[id]", () => {
     const response = await PATCH(request({ status: "cancelled" }), { params });
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ ok: true, status: "cancelled" });
-    expect(updateBuilder.update).toHaveBeenCalledWith({ status: "cancelled" });
+    expect(updateBuilder.update).toHaveBeenCalledWith(expect.objectContaining({
+      status: "cancelled",
+      attended_at: null,
+      missed_marked_at: null
+    }));
   });
 
   it("reschedules an appointment with a normalized ISO time", async () => {
@@ -118,6 +122,8 @@ describe("PATCH /api/appointments/[id]", () => {
     expect(response.status).toBe(200);
     expect(updateBuilder.update).toHaveBeenCalledWith({
       status: "scheduled",
+      attended_at: null,
+      missed_marked_at: null,
       appointment_at: "2026-12-01T01:30:00.000Z",
       clinic: "คลินิกสุขภาพ"
     });
