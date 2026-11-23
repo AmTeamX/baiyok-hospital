@@ -108,6 +108,23 @@ describe("POST /api/patients/[id]/appointments", () => {
     expect(await response.json()).toMatchObject({ ok: true, appointmentId: "a1" });
   });
 
+  it("automatically marks a past appointment as missed", async () => {
+    mocks.requireClinicalStaff.mockResolvedValue({ mode: "authenticated", userId: actorId, serviceUnitId: "unit-1" });
+    mocks.supabase.from.mockImplementation(queueFrom([
+      () => ({ data: { id: patientId }, error: null }),
+      () => ({ data: { id: "a-past" }, error: null }),
+      () => ({ data: null, error: null })
+    ]).from);
+
+    const response = await addAppointment(jsonRequest(
+      "http://localhost/api/patients/x/appointments",
+      { appointmentDate: "2020-01-01", appointmentTime: "08:30", clinic: "คลินิกความดัน", status: "scheduled" },
+      "POST"
+    ), { params: Promise.resolve({ id: patientId }) });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, appointmentId: "a-past", status: "missed" });
+  });
+
   it("reports a duplicate appointment as 409", async () => {
     mocks.requireClinicalStaff.mockResolvedValue({ mode: "authenticated", userId: actorId, serviceUnitId: "unit-1" });
     mocks.supabase.from.mockImplementation(queueFrom([

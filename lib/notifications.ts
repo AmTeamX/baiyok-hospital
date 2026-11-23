@@ -63,7 +63,7 @@ export function buildAppointmentStatusMessage(status: "rescheduled" | "cancelled
 }
 
 export function buildPatientStatusFlex(options: {
-  kind: "patient_request_status" | "appointment_rescheduled" | "appointment_cancelled";
+  kind: "patient_request_status" | "appointment_created" | "appointment_rescheduled" | "appointment_cancelled";
   status?: string;
   link: string;
   appointmentAt?: string;
@@ -71,6 +71,7 @@ export function buildPatientStatusFlex(options: {
 }) {
   const isCancelled = options.kind === "appointment_cancelled";
   const isRescheduled = options.kind === "appointment_rescheduled";
+  const isCreated = options.kind === "appointment_created";
   const requestLabels: Record<string, string> = {
     new: "ได้รับคำขอของคุณแล้ว",
     acknowledged: "เจ้าหน้าที่รับเรื่องแล้ว",
@@ -82,8 +83,10 @@ export function buildPatientStatusFlex(options: {
     ? "นัดถูกยกเลิก"
     : isRescheduled
       ? "นัดถูกเลื่อนเรียบร้อย"
-      : requestLabels[options.status ?? "new"] ?? "มีการอัปเดตคำขอ";
-  const accent = isCancelled ? "#C94B4B" : isRescheduled ? "#1677A5" : "#2F7D68";
+      : isCreated
+        ? "มีนัดใหม่"
+        : requestLabels[options.status ?? "new"] ?? "มีการอัปเดตคำขอ";
+  const accent = isCancelled ? "#C94B4B" : isRescheduled ? "#1677A5" : isCreated ? "#1677A5" : "#2F7D68";
   let detail = "ตรวจสอบรายละเอียดและนัดครั้งถัดไปได้ที่นี่";
   if (options.appointmentAt) {
     detail = new Intl.DateTimeFormat("th-TH", {
@@ -192,6 +195,7 @@ export function buildNotificationMessage(
   options: { appointmentId?: string | null; patientRequestStatus?: string } = {}
 ): string {
   if (kind === "patient_request_status") return buildPatientRequestMessage(options.patientRequestStatus ?? "new", appUrl);
+  if (kind === "appointment_created") return `มีนัดใหม่ของคุณ\nโปรดตรวจสอบวัน เวลา และคลินิก:\n${patientAppointmentDeepLink(options.appointmentId ?? followUpId, appUrl)}`;
   if (kind === "appointment_rescheduled") return buildAppointmentStatusMessage("rescheduled", options.appointmentId ?? followUpId, appUrl);
   if (kind === "appointment_cancelled") return buildAppointmentStatusMessage("cancelled", options.appointmentId ?? followUpId, appUrl);
   return kind === "follow_up_sla_reminder"

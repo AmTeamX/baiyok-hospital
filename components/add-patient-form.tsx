@@ -12,7 +12,6 @@ export function AddPatientForm() {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentTime, setAppointmentTime] = useState("08:00");
   const [clinic, setClinic] = useState("คลินิกความดัน");
-  const [status, setStatus] = useState<"scheduled" | "missed">("scheduled");
 
   const [phase, setPhase] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -25,7 +24,7 @@ export function AddPatientForm() {
       const response = await fetch("/api/patients", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ hn, fullName, phone, village, appointmentDate, appointmentTime, clinic, status })
+        body: JSON.stringify({ hn, fullName, phone, village, appointmentDate, appointmentTime, clinic })
       });
       const body = await response.json();
       if (response.status === 409) {
@@ -46,7 +45,7 @@ export function AddPatientForm() {
   }
 
   function reset() {
-    setHn(""); setFullName(""); setPhone(""); setVillage(""); setAppointmentDate(""); setAppointmentTime("08:00"); setClinic("คลินิกความดัน"); setStatus("scheduled");
+    setHn(""); setFullName(""); setPhone(""); setVillage(""); setAppointmentDate(""); setAppointmentTime("08:00"); setClinic("คลินิกความดัน");
     setPhase("idle");
     setMessage("");
   }
@@ -75,20 +74,13 @@ export function AddPatientForm() {
         <label className="field"><span>หมู่บ้าน</span><input value={village} onChange={(event) => setVillage(event.target.value)} /></label>
       </div>
       </fieldset>
-      <fieldset className="intake-section"><legend><span>02</span>ข้อมูลนัด</legend><p>ตรวจวัน เวลา และสถานะก่อนบันทึก</p>
+      <fieldset className="intake-section"><legend><span>02</span>ข้อมูลนัด</legend><p>ระบบกำหนดสถานะตามวันและเวลานัดอัตโนมัติ</p>
       <div className="two-fields">
         <label className="field"><span>วันที่นัด *</span><input type="date" value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} required /></label>
         <label className="field"><span>เวลานัด</span><input type="time" value={appointmentTime} onChange={(event) => setAppointmentTime(event.target.value)} required /></label>
       </div>
       <label className="field"><span>คลินิก</span><input value={clinic} onChange={(event) => setClinic(event.target.value)} required /></label>
-      <label className="field">
-        <span>สถานะ</span>
-        <select value={status} onChange={(event) => setStatus(event.target.value as "scheduled" | "missed")}>
-          <option value="scheduled">นัดปกติ (ยังไม่ขาดนัด)</option>
-          <option value="missed">ขาดนัด (สร้างรายการติดตามทันที)</option>
-        </select>
-      </label>
-      {status === "missed" && <p className="volunteer-hint">จะสร้างเป็นผู้ขาดนัดพร้อมรายการติดตามให้ทันที ปรากฏในทะเบียนผู้ขาดนัด</p>}
+      <p className="volunteer-hint">นัดที่มีวันเวลาอยู่ก่อนปัจจุบันจะถูกบันทึกเป็นขาดนัดและสร้างรายการติดตามทันที</p>
 
       </fieldset>
       <div className="form-action-bar"><Link className="button secondary" href="/patients">ยกเลิก</Link><button className="button primary" disabled={phase === "saving"}>{phase === "saving" ? <><LoaderCircle className="spin" size={18} />กำลังบันทึก</> : <><Save size={18} />บันทึกผู้ป่วยและนัด</>}</button></div>

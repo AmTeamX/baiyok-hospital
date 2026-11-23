@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
-import { dispatchNotifications } from "@/lib/notification-dispatch";
+import { dispatchNotifications, enqueuePatientAppointmentNotification } from "@/lib/notification-dispatch";
 
 export const runtime = "nodejs";
 
@@ -23,7 +23,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const appointmentDate = typeof body.appointmentDate === "string" ? body.appointmentDate.trim() : "";
   const appointmentTime = (typeof body.appointmentTime === "string" ? body.appointmentTime.trim() : "") || "08:00";
   const clinic = typeof body.clinic === "string" ? body.clinic.trim() : "";
-  const status = body.status === "missed" ? "missed" : "scheduled";
 
   if (!clinic || !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)) {
     return NextResponse.json({ ok: false, error: "กรุณากรอกคลินิกและวันที่นัดให้ถูกต้อง" }, { status: 422 });
@@ -35,6 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (Number.isNaN(Date.parse(appointmentAt))) {
     return NextResponse.json({ ok: false, error: "วันและเวลานัดไม่ถูกต้อง" }, { status: 422 });
   }
+  const status = Date.parse(appointmentAt) < Date.now() ? "missed" : "scheduled";
 
   if (!hasSupabaseAdmin() || !staff.serviceUnitId) {
     return NextResponse.json({ ok: true, mode: "demo", appointmentId: "demo" });
@@ -79,6 +79,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (status === "missed") {
     try { await dispatchNotifications({ appointmentId: appointment.id }); } catch { /* Retry from the outbox. */ }
+  } else {
+    try {
+      await enqueuePatientAppointmentNotification(id, appointment.id, "appointment_created");
+      await dispatchNotifications({ appointmentId: appointment.id });
+    } catch { /* Retry from the outbox. */ }
   }
   return NextResponse.json({ ok: true, mode: "database", appointmentId: appointment.id, status });
 }

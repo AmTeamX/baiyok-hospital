@@ -4,6 +4,36 @@ import { buildPatientStatusFlex, buildVolunteerTaskFlex, deliverNotification, pa
 
 const BATCH_SIZE = 20;
 
+export async function enqueuePatientAppointmentNotification(
+  patientId: string,
+  appointmentId: string,
+  kind: "appointment_created" | "appointment_rescheduled" | "appointment_cancelled"
+) {
+  if (!hasSupabaseAdmin()) return false;
+  const supabase = createAdminClient();
+  const { data: link } = await supabase
+    .from("line_account_links")
+    .select("line_account_id")
+    .eq("patient_id", patientId)
+    .eq("role", "patient")
+    .eq("status", "active")
+    .maybeSingle();
+  if (!link?.line_account_id) return false;
+
+  const suffix = kind === "appointment_created" ? "created" : kind === "appointment_rescheduled" ? "rescheduled" : "cancelled";
+  const { error } = await supabase.from("notification_logs").insert({
+    appointment_id: appointmentId,
+    recipient_line_account_id: link.line_account_id,
+    kind,
+    channel: "line",
+    status: "pending",
+    idempotency_key: `${suffix}:${appointmentId}`,
+    attempt_count: 0,
+    next_attempt_at: new Date().toISOString()
+  });
+  return !error;
+}
+
 export async function dispatchNotifications(options: { notificationId?: string; recipientProfileId?: string; appointmentId?: string } = {}) {
   if (!hasSupabaseAdmin()) throw new Error("supabase not configured");
 
@@ -14,7 +44,7 @@ export async function dispatchNotifications(options: { notificationId?: string; 
     .from("notification_logs")
     .select("id, appointment_id, follow_up_id, patient_request_id, recipient_profile_id, recipient_line_account_id, kind, attempt_count")
     .eq("channel", "line")
-    .in("kind", ["follow_up_assigned", "follow_up_sla_reminder", "patient_request_status", "appointment_rescheduled", "appointment_cancelled"])
+    .in("kind", ["follow_up_assigned", "follow_up_sla_reminder", "patient_request_status", "appointment_created", "appointment_rescheduled", "appointment_cancelled"])
     .in("status", ["pending", "failed"])
     .lte("next_attempt_at", nowIso)
     .order("next_attempt_at", { ascending: true })
@@ -125,7 +155,7 @@ export async function dispatchNotifications(options: { notificationId?: string; 
               : "มีงานติดตามผู้ป่วยใหม่";
             return pushLineFlex(to, flex, altText, candidate.id);
           }
-        : ["patient_request_status", "appointment_rescheduled", "appointment_cancelled"].includes(candidate.kind)
+        : ["patient_request_status", "appointment_created", "appointment_rescheduled", "appointment_cancelled"].includes(candidate.kind)
           ? (to) => {
             const appointment = candidate.appointment_id ? appointmentMap.get(candidate.appointment_id) : undefined;
             const flex = buildPatientStatusFlex({
@@ -139,7 +169,9 @@ export async function dispatchNotifications(options: { notificationId?: string; 
               ? "นัดของคุณถูกยกเลิก"
               : candidate.kind === "appointment_rescheduled"
                 ? "นัดของคุณถูกเลื่อนเรียบร้อย"
-                : "มีการอัปเดตคำขอของคุณ";
+                : candidate.kind === "appointment_created"
+                  ? "มีนัดใหม่ของคุณ"
+                  : "มีการอัปเดตคำขอของคุณ";
             return pushLineFlex(to, flex, altText, candidate.id);
           }
         : undefined

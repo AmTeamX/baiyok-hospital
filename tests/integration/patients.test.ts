@@ -93,7 +93,7 @@ describe("POST /api/patients", () => {
       () => ({ data: null, error: null })
     ]).from);
 
-    const response = await POST(request({ ...validBody, status: "missed" }));
+    const response = await POST(request({ ...validBody, appointmentDate: "2020-01-01", status: "missed" }));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ ok: true, status: "missed" });
   });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
-import { dispatchNotifications } from "@/lib/notification-dispatch";
+import { dispatchNotifications, enqueuePatientAppointmentNotification } from "@/lib/notification-dispatch";
 
 export const runtime = "nodejs";
 
@@ -87,7 +87,6 @@ export async function POST(request: Request) {
   const appointmentDate = typeof body.appointmentDate === "string" ? body.appointmentDate.trim() : "";
   const appointmentTime = (typeof body.appointmentTime === "string" ? body.appointmentTime.trim() : "") || "08:00";
   const clinic = typeof body.clinic === "string" ? body.clinic.trim() : "";
-  const status = body.status === "missed" ? "missed" : "scheduled";
 
   if (!hn || !fullName || !clinic) {
     return NextResponse.json({ ok: false, error: "กรุณากรอก HN ชื่อ และคลินิก" }, { status: 422 });
@@ -102,6 +101,7 @@ export async function POST(request: Request) {
   if (Number.isNaN(Date.parse(appointmentAt))) {
     return NextResponse.json({ ok: false, error: "วันและเวลานัดไม่ถูกต้อง" }, { status: 422 });
   }
+  const status = Date.parse(appointmentAt) < Date.now() ? "missed" : "scheduled";
 
   if (!hasSupabaseAdmin() || !staff.userId || !staff.serviceUnitId) {
     if (!hasSupabaseAdmin() || !staff.userId) {
@@ -164,6 +164,11 @@ export async function POST(request: Request) {
 
   if (status === "missed") {
     try { await dispatchNotifications({ appointmentId: appointment.id }); } catch { /* Retry from the outbox. */ }
+  } else {
+    try {
+      await enqueuePatientAppointmentNotification(patient.id, appointment.id, "appointment_created");
+      await dispatchNotifications({ appointmentId: appointment.id });
+    } catch { /* Retry from the outbox. */ }
   }
   return NextResponse.json({ ok: true, mode: "database", patientId: patient.id, appointmentId: appointment.id, status });
 }

@@ -64,7 +64,6 @@ export function PatientDetail({ id }: { id: string }) {
   const [apptDate, setApptDate] = useState("");
   const [apptTime, setApptTime] = useState("08:00");
   const [apptClinic, setApptClinic] = useState("คลินิกความดัน");
-  const [apptStatus, setApptStatus] = useState<"scheduled" | "missed">("scheduled");
   const [adding, setAdding] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -173,7 +172,7 @@ export function PatientDetail({ id }: { id: string }) {
       const response = await fetch(`/api/patients/${id}/appointments`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ appointmentDate: apptDate, appointmentTime: apptTime, clinic: apptClinic, status: apptStatus })
+        body: JSON.stringify({ appointmentDate: apptDate, appointmentTime: apptTime, clinic: apptClinic })
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "เพิ่มนัดไม่สำเร็จ");
@@ -295,8 +294,7 @@ export function PatientDetail({ id }: { id: string }) {
             <label className="field"><span>เวลานัด</span><input type="time" value={apptTime} onChange={(event) => setApptTime(event.target.value)} required /></label>
           </div>
           <label className="field"><span>คลินิก</span><input value={apptClinic} onChange={(event) => setApptClinic(event.target.value)} required /></label>
-          <label className="field"><span>สถานะ</span><select value={apptStatus} onChange={(event) => setApptStatus(event.target.value as "scheduled" | "missed")}><option value="scheduled">นัดปกติ</option><option value="missed">ขาดนัด (สร้างติดตามทันที)</option></select></label>
-          {apptStatus === "missed" && <div className="modal-callout"><CircleAlert size={18} /><p>ระบบจะสร้างเคสติดตามทันทีหลังบันทึกนัด</p></div>}
+          <div className="modal-callout"><CircleAlert size={18} /><p>ถ้านัดอยู่ก่อนเวลาปัจจุบัน ระบบจะบันทึกเป็นขาดนัดและสร้างรายการติดตามทันที</p></div>
           <div className="modal-actions"><button type="button" className="button secondary" onClick={() => setShowAdd(false)} disabled={adding}>ยกเลิก</button><button className="button primary" disabled={adding}>{adding ? <><LoaderCircle className="spin" size={16} />กำลังเพิ่ม</> : "เพิ่มนัด"}</button></div>
         </form>
       </Modal>

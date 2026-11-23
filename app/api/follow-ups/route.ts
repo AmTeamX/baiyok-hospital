@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireClinicalStaff } from "@/lib/supabase/server";
 import { isValidMissedReason, normalizePriority } from "@/lib/follow-ups";
+import { dispatchNotifications, enqueuePatientAppointmentNotification } from "@/lib/notification-dispatch";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -85,6 +86,13 @@ export async function POST(request: Request) {
   if (activities.length) {
     const { error } = await supabase.from("follow_up_activities").insert(activities);
     if (error) throw error;
+  }
+
+  if (newAppointmentId) {
+    try {
+      await enqueuePatientAppointmentNotification(appointment.patient_id, newAppointmentId, "appointment_rescheduled");
+      await dispatchNotifications({ appointmentId: newAppointmentId });
+    } catch { /* Retry from the outbox. */ }
   }
 
   await supabase.from("audit_logs").insert({
