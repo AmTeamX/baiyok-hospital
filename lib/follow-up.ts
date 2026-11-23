@@ -45,6 +45,10 @@ export type FollowUpDetail = {
     village: string | null;
     phone: string | null;
   };
+  line: {
+    linked: boolean;
+    displayName: string | null;
+  };
   activities: FollowUpActivity[];
 };
 
@@ -92,6 +96,7 @@ export function demoFollowUpDetail(id: string): FollowUpDetail | null {
     newAppointmentId: null,
     appointment: { id, appointmentAt, clinic: "คลินิกความดันโลหิตสูง", status: "missed", missedMarkedAt: appointmentAt },
     patient: { id, hn: item.hn, fullName: item.name, birthDate: null, age: item.age, village: item.village, phone: null },
+    line: { linked: false, displayName: null },
     activities: []
   };
 }

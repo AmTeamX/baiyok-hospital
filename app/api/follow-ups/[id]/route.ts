@@ -40,6 +40,16 @@ async function getFollowUpDetail(supabase: ReturnType<typeof createAdminClient>,
   const patient = Array.isArray(relatedPatient) ? relatedPatient[0] ?? null : relatedPatient ?? null;
   if (patient?.service_unit_id !== serviceUnitId) return null;
 
+  const { data: links } = await supabase
+    .from("line_account_links")
+    .select("status, line_account_id, line_accounts(display_name)")
+    .eq("patient_id", patient.id)
+    .eq("role", "patient");
+  const activeLink = (links ?? []).find((link) => link.status === "active");
+  const account = Array.isArray(activeLink?.line_accounts)
+    ? activeLink.line_accounts[0]
+    : activeLink?.line_accounts;
+
   const performerIds = [...new Set((activities ?? []).map((activity) => activity.performed_by).filter((value): value is string => Boolean(value)))];
   const { data: performers } = performerIds.length
     ? await supabase.from("profiles").select("id, full_name").in("id", performerIds)
@@ -80,6 +90,10 @@ async function getFollowUpDetail(supabase: ReturnType<typeof createAdminClient>,
       age: ageFromBirthDate(patient?.birth_date ?? null),
       village: patient?.village ?? null,
       phone: patient?.phone ?? null
+    },
+    line: {
+      linked: Boolean(activeLink),
+      displayName: account?.display_name ?? null
     },
     activities: (activities ?? []).map((activity) => ({
       id: activity.id,

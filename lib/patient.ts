@@ -5,11 +5,12 @@ export const PATIENT_REQUEST_TYPES: PatientRequestType[] = ["problem", "consult"
 export const PATIENT_REQUEST_STATUSES: PatientRequestStatus[] = ["new", "acknowledged", "contacted", "resolved", "unable_to_contact"];
 
 export const PATIENT_REQUEST_REASONS: Record<PatientRequestType, string[]> = {
-  problem: ["travel_difficulty", "no_escort", "sick", "work", "other"],
+  problem: ["reschedule_appointment", "travel_difficulty", "no_escort", "sick", "work", "other"],
   consult: ["medication", "symptoms", "appointment_question", "other"]
 };
 
 export const PATIENT_REQUEST_REASON_LABELS: Record<string, string> = {
+  reschedule_appointment: "ขอเลื่อนนัด",
   travel_difficulty: "เดินทางไม่สะดวก",
   no_escort: "ไม่มีผู้พามา",
   sick: "ไม่สบาย / มีอาการ",

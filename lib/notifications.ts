@@ -187,6 +187,99 @@ export function buildVolunteerTaskFlex(
   };
 }
 
+export function buildAccountLinkedFlex(role: "patient" | "volunteer", appUrl?: string) {
+  const isVolunteer = role === "volunteer";
+  const destination = isVolunteer ? "volunteer" : "appointments";
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  const link = liffId
+    ? `https://liff.line.me/${liffId}?destination=${encodeURIComponent(destination)}`
+    : `${(appUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "")}/liff/${destination}`;
+
+  return {
+    type: "bubble",
+    size: "kilo",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#1677A5",
+      paddingAll: "16px",
+      contents: [
+        { type: "text", text: "รพ.สต. สระโคล่", weight: "bold", color: "#FFFFFF", size: "sm" },
+        { type: "text", text: "เชื่อมบัญชีสำเร็จ", weight: "bold", color: "#FFFFFF", size: "xl", margin: "sm", wrap: true }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      paddingAll: "18px",
+      contents: [
+        { type: "text", text: isVolunteer ? "พร้อมใช้งานเมนูงานของ อสม." : "พร้อมดูวันนัดและส่งคำขอผ่าน LIFF", size: "md", weight: "bold", color: "#24332F", wrap: true },
+        { type: "text", text: "กดปุ่มด้านล่างเพื่อเปิดเมนูของคุณ", size: "sm", color: "#66736F", margin: "md", wrap: true }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#1677A5",
+          action: { type: "uri", label: isVolunteer ? "เปิดงานของฉัน" : "ดูวันนัดของฉัน", uri: link }
+        }
+      ]
+    }
+  };
+}
+
+export function buildTomorrowAppointmentFlex(appointment: { appointmentAt: string; clinic: string }, appUrl?: string) {
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  const link = liffId
+    ? `https://liff.line.me/${liffId}?destination=${encodeURIComponent("appointments")}`
+    : `${(appUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "")}/liff/appointments`;
+  const when = new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Asia/Bangkok"
+  }).format(new Date(appointment.appointmentAt));
+
+  return {
+    type: "bubble",
+    size: "kilo",
+    header: {
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#1677A5",
+      paddingAll: "16px",
+      contents: [
+        { type: "text", text: "แจ้งเตือนวันนัด", weight: "bold", color: "#FFFFFF", size: "xl" },
+        { type: "text", text: "รพ.สต. สระโคล่", color: "#FFFFFF", size: "sm", margin: "sm" }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      paddingAll: "18px",
+      contents: [
+        { type: "text", text: when, size: "md", weight: "bold", color: "#24332F", wrap: true },
+        { type: "text", text: appointment.clinic, size: "sm", color: "#66736F", margin: "md", wrap: true },
+        { type: "text", text: "กรุณานำยาและสมุดประจำตัวมาด้วย", size: "sm", color: "#66736F", margin: "md", wrap: true }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "12px",
+      contents: [
+        { type: "button", style: "primary", color: "#1677A5", action: { type: "uri", label: "ดูนัดของฉัน", uri: link } }
+      ]
+    }
+  };
+}
+
 /** Pick the outbound text for a notification kind without exposing clinical detail. */
 export function buildNotificationMessage(
   kind: string,

@@ -4,7 +4,8 @@ import { verifyLiffIdToken } from "@/lib/line/liff";
 import { hashLinkToken, type LinkCodeRole } from "@/lib/line/link-code";
 import { consumeNonce, getSessionSecret, setSessionCookie } from "@/lib/line/session";
 import { resolveRichMenuId, linkRichMenuToUser, selectRichMenuKind } from "@/lib/line/rich-menu";
-import { pushLineText } from "@/lib/line";
+import { pushLineFlex } from "@/lib/line";
+import { buildAccountLinkedFlex } from "@/lib/notifications";
 
 type VerifyBody = {
   idToken?: string;
@@ -167,10 +168,8 @@ export async function POST(request: Request) {
   // Best-effort confirmation push — no health data.
   try {
     if (process.env.LINE_CHANNEL_ACCESS_TOKEN) {
-      const confirmMessage = resolvedRole === "volunteer"
-        ? "ผูกบัญชี อสม. สำเร็จแล้ว\nเปิดเมนู \"งานของฉัน\" เพื่อดูงานที่ได้รับมอบหมาย"
-        : "ผูกบัญชี LINE สำเร็จแล้ว\nเปิดเมนู \"วันนัดของฉัน\" เพื่อดูวันนัดของคุณ";
-      await pushLineText(lineUserId, confirmMessage);
+      const flex = buildAccountLinkedFlex(resolvedRole);
+      await pushLineFlex(lineUserId, flex, "เชื่อมบัญชีสำเร็จ");
     }
   } catch {
     // Non-fatal; the identity link already succeeded.

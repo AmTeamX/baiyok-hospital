@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, hasSupabaseAdmin } from "@/lib/supabase/admin";
-import { pushLineText } from "@/lib/line";
+import { pushLineFlex } from "@/lib/line";
+import { buildTomorrowAppointmentFlex } from "@/lib/notifications";
 
 function thaiDateOffset(days: number) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -30,17 +31,18 @@ export async function GET(request: Request) {
   const patientIds = [...new Set(appointments.map((item) => item.patient_id))];
 
   // Resolve the LINE user via the active patient link (not the deprecated patients.line_user_id).
-  const [{ data: patients }, { data: links }] = await Promise.all([
-    supabase.from("patients").select("id, full_name").in("id", patientIds),
-    supabase.from("line_account_links").select("patient_id, line_account_id").eq("role", "patient").eq("status", "active").in("patient_id", patientIds)
-  ]);
+  const { data: links } = await supabase
+    .from("line_account_links")
+    .select("patient_id, line_account_id")
+    .eq("role", "patient")
+    .eq("status", "active")
+    .in("patient_id", patientIds);
   const accountIds = [...new Set((links ?? []).map((link) => link.line_account_id))];
   const [{ data: accounts }, { data: existing }] = await Promise.all([
     accountIds.length ? supabase.from("line_accounts").select("id, line_user_id").in("id", accountIds) : Promise.resolve({ data: [] }),
     supabase.from("notification_logs").select("appointment_id").eq("kind", "appointment_tomorrow").in("appointment_id", appointmentIds)
   ]);
 
-  const patientMap = new Map((patients ?? []).map((patient) => [patient.id, patient.full_name]));
   const accountMap = new Map((accounts ?? []).map((account) => [account.id, account.line_user_id]));
   const patientLineMap = new Map((links ?? []).map((link) => [link.patient_id, accountMap.get(link.line_account_id) ?? null]));
   const sentIds = new Set((existing ?? []).map((log) => log.appointment_id));
@@ -51,10 +53,12 @@ export async function GET(request: Request) {
   for (const appointment of appointments) {
     const lineUserId = patientLineMap.get(appointment.patient_id) ?? null;
     if (!lineUserId || sentIds.has(appointment.id)) continue;
-    const name = patientMap.get(appointment.patient_id) ?? "ผู้ป่วย";
-    const when = new Intl.DateTimeFormat("th-TH", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(new Date(appointment.appointment_at));
     try {
-      await pushLineText(lineUserId, `แจ้งเตือนวันนัด\nคุณ${name} มีนัด${appointment.clinic}\n${when}\nกรุณานำยาและสมุดประจำตัวมาด้วย หากไม่สะดวกให้แจ้งเจ้าหน้าที่ผ่านเมนู แจ้งปัญหา`);
+      await pushLineFlex(
+        lineUserId,
+        buildTomorrowAppointmentFlex({ appointmentAt: appointment.appointment_at, clinic: appointment.clinic }),
+        "แจ้งเตือนวันนัด"
+      );
       await supabase.from("notification_logs").insert({ appointment_id: appointment.id, kind: "appointment_tomorrow", channel: "line", status: "sent" });
       sent += 1;
     } catch (pushError) {

@@ -268,7 +268,11 @@ export function CaseDetail({ id }: { id: string }) {
 
       <section className="panel case-summary" hidden={view !== "overview"} style={{ marginBlockStart: "var(--space-lg)" }}>
         <h2>เชื่อมบัญชี LINE</h2>
-        <p>ตรวจสถานะการเชื่อมบัญชีและจัดการรหัสจากประวัติผู้ป่วย</p>
+        {detail.line?.linked ? (
+          <p><strong>เชื่อมแล้ว</strong>{detail.line.displayName ? ` · ${detail.line.displayName}` : ""}</p>
+        ) : (
+          <p><strong>ยังไม่เชื่อมบัญชี LINE</strong></p>
+        )}
         <Link className="button secondary" href={`/patients/${detail.patient.id}`}>เปิดบัญชีผู้ป่วย</Link>
       </section>
 

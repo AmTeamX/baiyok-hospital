@@ -17,6 +17,9 @@ type RequestItem = {
   assigneeName: string | null;
   createdAt: string | null;
   appointmentId: string | null;
+  appointmentAt: string | null;
+  appointmentClinic: string | null;
+  patientId: string | null;
 };
 
 function thaiTime(value: string | null) {
@@ -116,7 +119,38 @@ export default function RequestsPage() {
         </div>
       </section>
       <Modal open={Boolean(selected)} onClose={() => { if (!busy) setSelected(null); }} title={selected?.typeLabel ?? "รายละเอียดคำขอ"} description={selected?.patientName ?? "ไม่ระบุผู้ป่วย"}>
-        {selected && <div className="request-detail"><i className={`status-dot status-req-${selected.status}`}>{selected.statusLabel}</i><dl className="detail-facts"><div><dt>เหตุผล</dt><dd>{selected.reasonLabel}</dd></div><div><dt>ส่งเมื่อ</dt><dd>{thaiTime(selected.createdAt)}</dd></div><div><dt>ผู้รับผิดชอบ</dt><dd>{selected.assigneeName ?? "ยังไม่รับเรื่อง"}</dd></div>{selected.appointmentId && <div><dt>นัดที่เกี่ยวข้อง</dt><dd><Link className="text-link" href="/appointments">เปิดหน้าจัดการนัด ›</Link></dd></div>}</dl><div className="request-note"><strong>ข้อความจากผู้ป่วย</strong><p>{selected.note || "ไม่มีรายละเอียดเพิ่มเติม"}</p></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-actions"><button className="button secondary" disabled={Boolean(busy)} onClick={() => setSelected(null)}>ปิด</button>{selected.status === "new" ? <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "acknowledged")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}รับเรื่อง</button> : selected.status === "acknowledged" || selected.status === "contacted" ? <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "resolved")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}ปิดเรื่อง</button> : null}</div></div>}
+        {selected && (
+          <div className="request-detail">
+            <i className={`status-dot status-req-${selected.status}`}>{selected.statusLabel}</i>
+            <dl className="detail-facts">
+              <div><dt>เหตุผล</dt><dd>{selected.reasonLabel}</dd></div>
+              <div><dt>ส่งเมื่อ</dt><dd>{thaiTime(selected.createdAt)}</dd></div>
+              <div><dt>ผู้รับผิดชอบ</dt><dd>{selected.assigneeName ?? "ยังไม่รับเรื่อง"}</dd></div>
+              {selected.appointmentId && (
+                <div>
+                  <dt>นัดที่เกี่ยวข้อง</dt>
+                  <dd>
+                    <strong>{selected.appointmentClinic ?? "คลินิก"}</strong>
+                    {selected.appointmentAt && <small>{thaiTime(selected.appointmentAt)}</small>}
+                    {selected.patientId && (
+                      <Link className="text-link" href={`/patients/${selected.patientId}`}>เปิดข้อมูลผู้ป่วยและนัด ›</Link>
+                    )}
+                  </dd>
+                </div>
+              )}
+            </dl>
+            <div className="request-note"><strong>ข้อความจากผู้ป่วย</strong><p>{selected.note || "ไม่มีรายละเอียดเพิ่มเติม"}</p></div>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <div className="modal-actions">
+              <button className="button secondary" disabled={Boolean(busy)} onClick={() => setSelected(null)}>ปิด</button>
+              {selected.status === "new" ? (
+                <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "acknowledged")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}รับเรื่อง</button>
+              ) : selected.status === "acknowledged" || selected.status === "contacted" ? (
+                <button className="button primary" disabled={Boolean(busy)} onClick={() => void transition(selected.id, "resolved")}>{busy ? <LoaderCircle className="spin" size={16} /> : null}ปิดเรื่อง</button>
+              ) : null}
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

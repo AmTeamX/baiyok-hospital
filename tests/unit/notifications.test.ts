@@ -5,6 +5,8 @@ import {
   buildSlaReminderMessage,
   buildPatientStatusFlex,
   buildVolunteerTaskFlex,
+  buildAccountLinkedFlex,
+  buildTomorrowAppointmentFlex,
   deliverNotification,
   isUnlinkedRecipient,
   MAX_NOTIFICATION_ATTEMPTS,
@@ -64,6 +66,20 @@ describe("notification helpers", () => {
     expect(JSON.stringify(assigned)).toContain("มีงานติดตามใหม่");
     expect(JSON.stringify(reminder)).toContain("งานติดตามค้างการบันทึก");
     expect(JSON.stringify(assigned)).toContain("เปิดงานติดตาม");
+    vi.unstubAllEnvs();
+  });
+
+  it("builds Flex cards for account linking and tomorrow reminders", () => {
+    vi.stubEnv("NEXT_PUBLIC_LIFF_ID", "123-app");
+    const linked = buildAccountLinkedFlex("patient");
+    const reminder = buildTomorrowAppointmentFlex({
+      appointmentAt: "2026-12-01T01:30:00.000Z",
+      clinic: "คลินิกความดัน"
+    });
+    expect(JSON.stringify(linked)).toContain("เชื่อมบัญชีสำเร็จ");
+    expect(JSON.stringify(linked)).toContain("ดูวันนัดของฉัน");
+    expect(JSON.stringify(reminder)).toContain("แจ้งเตือนวันนัด");
+    expect(JSON.stringify(reminder)).toContain("คลินิกความดัน");
     vi.unstubAllEnvs();
   });
 

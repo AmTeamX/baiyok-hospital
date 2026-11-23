@@ -76,7 +76,7 @@ export default function LiffAppointmentsPage() {
                   </div>
                   <a className="button patient-primary" href={`/api/calendar?date=${encodeURIComponent(next.appointmentAt)}`}><CalendarDays /> เพิ่มเตือนในปฏิทิน</a>
                 </section>
-                <div className="patient-actions"><a href={`/liff/problem?appointmentId=${encodeURIComponent(next.id)}&type=reschedule`}><span><CalendarDays /></span><div><strong>ขอเลื่อนนัด</strong><small>ส่งคำขอพร้อมลิงก์นัดนี้ให้เจ้าหน้าที่</small></div><span>›</span></a><a href="/liff/consult"><span><HeartPulse /></span><div><strong>ปรึกษาพยาบาล</strong><small>เรื่องยาและการดูแลตัวเอง</small></div><span>›</span></a></div>
+                <div className="patient-actions"><a href={`/liff/problem?appointmentId=${encodeURIComponent(next.id)}&type=reschedule`}><span><CalendarDays /></span><div><strong>ขอเลื่อนนัด</strong><small>ส่งคำขอพร้อมนัดนี้ให้เจ้าหน้าที่</small></div><span>›</span></a><a href={`/liff/problem?appointmentId=${encodeURIComponent(next.id)}`}><span><CalendarDays /></span><div><strong>มีปัญหาเรื่องนัดนี้</strong><small>แจ้งเจ้าหน้าที่ให้ติดต่อกลับ</small></div><span>›</span></a><a href="/liff/consult"><span><HeartPulse /></span><div><strong>ปรึกษาพยาบาล</strong><small>เรื่องยาและการดูแลตัวเอง</small></div><span>›</span></a></div>
               </>
             ) : (
               <section className="appointment-hero">

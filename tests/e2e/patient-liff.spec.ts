@@ -90,11 +90,20 @@ test("patient answers a health question and sees immediate feedback", async ({ p
 });
 
 test("patient submits a problem and receives acknowledgement", async ({ page }) => {
+  await page.route(/\/api\/patient\/me\/appointments$/, (route: Route) =>
+    route.fulfill({
+      json: {
+        ok: true,
+        appointments: [{ id: "a1", appointmentAt: appointmentAt, clinic: "คลินิกความดัน", status: "scheduled" }],
+        history: []
+      }
+    })
+  );
   await page.route(/\/api\/patient\/me\/requests$/, (route: Route) =>
     route.fulfill({ json: { ok: true, id: "r1", status: "new" } })
   );
 
-  await page.goto("/liff/problem");
+  await page.goto("/liff/problem?appointmentId=a1");
   await page.getByText("เดินทางไม่สะดวก").click();
   await page.getByRole("button", { name: "ส่งเรื่องให้เจ้าหน้าที่" }).click();
 
